@@ -2675,10 +2675,11 @@ async fn static_file(State(app): S, uri: Uri) -> Response {
     let readable = !p.contains("..") && fs::metadata(&path).is_ok_and(|m| m.is_file() && m.len() <= 50 * 1024 * 1024);
     match readable.then(|| fs::read(&path).ok()).flatten() {
         Some(b) if inert => ([(header::CONTENT_TYPE, ct), (header::ACCESS_CONTROL_ALLOW_ORIGIN, "*"), nosniff], b).into_response(),
-        Some(b) => ([(header::CONTENT_TYPE, ct), SANDBOX, nosniff], b).into_response(),
+        // Pagine e script si ricontrollano a ogni visita: dopo un aggiornamento nessuna copia vecchia resta nel browser.
+        Some(b) => ([(header::CONTENT_TYPE, ct), SANDBOX, nosniff, (header::CACHE_CONTROL, "no-cache")], b).into_response(),
         None => {
             let page = fs::read(app.public.join("404.html")).unwrap_or_else(|_| b"Pagina non trovata".to_vec());
-            (StatusCode::NOT_FOUND, [(header::CONTENT_TYPE, "text/html; charset=utf-8"), SANDBOX, nosniff], page).into_response()
+            (StatusCode::NOT_FOUND, [(header::CONTENT_TYPE, "text/html; charset=utf-8"), SANDBOX, nosniff, (header::CACHE_CONTROL, "no-cache")], page).into_response()
         }
     }
 }

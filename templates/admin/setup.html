@@ -39,7 +39,7 @@
 .note{display:flex;gap:10px;background:#eef4ff;border:1px solid #d3e1fc;border-radius:14px;padding:13px 16px;font-size:14px;color:#153a8f;margin:0 0 20px}
 </style>
 <form class="setup" id="setup" method="post" action="/admin/setup" enctype="multipart/form-data">
-  <div class="setup-brand"><img src="/admin/assets/logo.webp" alt="Presstatic" width="176" height="46"><span>Installazione guidata</span></div>
+  <div class="setup-brand"><img src="/admin/assets/logo.webp?v={{ asset_v }}" alt="Presstatic" width="176" height="43"><span>Installazione guidata</span></div>
   <ol class="steps-bar"><li class="on">Benvenuto</li><li>Il sito</li><li>Il tuo account</li><li>Aspetto</li><li>Collegamenti</li><li>Conferma</li></ol>
   {% if msg %}<p class="msg err" role="alert">{{ msg }}</p>{% endif %}
 
