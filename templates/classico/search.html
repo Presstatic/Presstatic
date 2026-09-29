@@ -1,0 +1,19 @@
+{#- Ricerca con Pagefind: l'indice è in /pagefind/ e la ricerca avviene nel browser. Vale per tutti i temi. -#}
+{% extends theme ~ "/base.html" %}
+{% block main %}
+<div class="col">
+  <h1 class="list-title">Cerca</h1>
+  <link rel="stylesheet" href="/pagefind/pagefind-ui.css">
+  <div id="search"></div>
+  <p id="search-off" class="notfound" hidden>L'indice di ricerca si sta preparando: riprova tra un paio di minuti.</p>
+</div>
+<style>#search{--pagefind-ui-primary:var(--accent);--pagefind-ui-text:var(--ink);--pagefind-ui-background:var(--paper);--pagefind-ui-border:var(--line,var(--rule));--pagefind-ui-tag:var(--soft,#f1f1f1);--pagefind-ui-font:inherit;--pagefind-ui-border-radius:8px}</style>
+<script src="/pagefind/pagefind-ui.js" onerror="document.getElementById('search-off').hidden=false"></script>
+<script>
+if (window.PagefindUI) {
+  const ui = new PagefindUI({ element: "#search", showSubResults: true, showImages: true, autofocus: true });
+  const q = new URLSearchParams(location.search).get("q");
+  if (q) ui.triggerSearch(q);
+}
+</script>
+{% endblock %}

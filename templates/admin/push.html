@@ -1,0 +1,46 @@
+{% extends "admin/base.html" %}
+{% block title %}Notifiche push | Presstatic{% endblock %}
+{% block main %}
+{% import "admin/icons.html" as ic %}
+<header class="page-head">
+  <div><h1>Notifiche push</h1><p class="sub">I lettori premono «Ricevi una notifica» sotto un articolo e ricevono un avviso sul telefono o sul computer quando esce una notizia, anche a sito chiuso. Funziona con Chrome, Edge, Firefox e Safari su computer, e con Android. Su iPhone e iPad per ora no: Apple le consente solo ai siti aggiunti alla schermata Home come app, e questo richiede un file manifest che Presstatic non genera ancora. Nessun servizio esterno.</p></div>
+</header>
+{% if not https %}<p class="msg info">Le notifiche richiedono il sito in https: sui browser funzionano solo su siti sicuri.</p>{% endif %}
+<div class="nl-stats">
+  <div class="panel"><span>Iscritti alle notifiche</span><strong>{{ subs }}</strong></div>
+  <div class="panel"><span>Stato</span><strong style="font-size:20px">{{ "Attive" if on else "Spente" }}</strong></div>
+</div>
+<div class="grid">
+  <div>
+    <form method="post" action="/admin/push" class="panel">
+      <input type="hidden" name="sv" value="{{ sv }}">
+      <h2><span class="hic">{{ ic.i("campanella") }}</span>Impostazioni</h2>
+      <label class="choice"><input type="checkbox" name="push_on"{% if s.push_on == "on" %} checked{% endif %}><span><strong>Notifiche attive</strong><small>Mostra il pulsante sotto gli articoli. Lo script si scarica solo quando il lettore lo preme: spente o accese, PageSpeed non cambia.</small></span></label>
+      <label class="choice"><input type="checkbox" name="push_on_publish"{% if s.push_on_publish == "on" %} checked{% endif %}><span><strong>Avvisa a ogni nuovo articolo</strong><small>Alla prima pubblicazione (anche per gli articoli programmati), non a ogni correzione. Senza, le notifiche partono solo a mano, qui accanto.</small></span></label>
+      <label>Testo del pulsante<input name="push_label" value="{{ s.push_label }}" maxlength="90" placeholder="Ricevi una notifica per le notizie importanti"></label>
+      <button class="btn">{{ ic.i("spunta", 18) }}Salva</button>
+      <details style="margin-top:16px"><summary><strong>Come funziona</strong> <span class="muted">chiavi, privacy, browser</span></summary>
+        <ol class="steps">
+          <li>All'attivazione Presstatic crea una coppia di <strong>chiavi VAPID</strong>: identificano il tuo sito presso i servizi push di Google, Mozilla, Apple e Microsoft. Non servono account né registrazioni.</li>
+          <li>Ogni notifica è <strong>cifrata</strong> per il singolo browser (standard Web Push): nemmeno i servizi push possono leggerla.</li>
+          <li>Del lettore si conserva solo l'indirizzo anonimo che il browser assegna all'iscrizione: niente email, niente nome. Se revoca il permesso, l'iscrizione viene tolta al primo invio.</li>
+        </ol>
+      </details>
+    </form>
+  </div>
+  <div class="side">
+    <form method="post" action="/admin/push/invia" class="panel">
+      <h2><span class="hic">{{ ic.i("carica") }}</span>Invia una notifica</h2>
+      <label>Titolo<input name="title" maxlength="80" required value="{{ s.site_name }}"></label>
+      <label>Testo<textarea name="body" rows="3" maxlength="200" required placeholder="Ultim'ora: …"></textarea></label>
+      <label>Apre la pagina<input name="url" placeholder="Indirizzo di un articolo (vuoto: la home)"></label>
+      <button class="btn wide"{% if not on %} disabled{% endif %}>{{ ic.i("campanella", 18) }}Invia a {{ subs }} iscritti</button>
+    </form>
+    {% if sends %}<div class="panel">
+      <h2><span class="hic">{{ ic.i("cronologia") }}</span>Ultimi invii</h2>
+      <ul class="revs">{% for x in sends %}<li><strong style="display:block">{{ x.body }}</strong><span>{{ x.date }} · {{ x.sent }} consegnate{% if x.failed %} · {{ x.failed }} non riuscite{% endif %}</span></li>{% endfor %}</ul>
+    </div>{% endif %}
+  </div>
+</div>
+<style>.nl-stats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin:0 0 18px}.nl-stats .panel{margin:0;padding:16px 18px}.nl-stats span{display:block;font-size:13px;font-weight:700;color:var(--muted)}.nl-stats strong{font-size:28px;color:var(--ink)}</style>
+{% endblock %}

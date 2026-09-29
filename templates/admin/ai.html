@@ -1,0 +1,41 @@
+{% extends "admin/base.html" %}
+{% block title %}Scrivi con l'IA | Presstatic{% endblock %}
+{% block main %}
+{% import "admin/icons.html" as ic %}
+<header class="page-head">
+  <div><h1>Scrivi con l'IA</h1><p class="sub">Dai le fonti di una notizia: l'IA prepara una bozza da rileggere, con titolo, sommario, testo e tag.</p></div>
+</header>
+{% if not models %}
+<div class="panel empty">
+  <span class="hic ai">{{ ic.i("ia", 26) }}</span>
+  <p>Per usare questa funzione serve una chiave API di Anthropic o di OpenAI.</p>
+  {% if me.role == "admin" %}<a class="btn ai" href="/admin/integrations#ai">{{ ic.i("integrazioni", 18) }}Inserisci una chiave</a>{% else %}<p class="muted" style="margin:0">Chiedi a un amministratore di inserirla nelle Integrazioni.</p>{% endif %}
+</div>
+{% else %}
+<form method="post" action="/admin/ai" class="grid" id="ai-form">
+  <div class="panel">
+    <h2><span class="hic ai">{{ ic.i("articoli") }}</span>La notizia</h2>
+    <label>Di cosa parla la notizia<small>Il fatto in una o due frasi, l'angolo da dare, cosa mettere in evidenza.</small><textarea name="topic" rows="4" placeholder="Riapre il ponte sul canale a Latina dopo otto mesi di lavori. Metti in evidenza cosa cambia per i pendolari.">{{ f.topic }}</textarea></label>
+    <label>Fonti<small>Un indirizzo per riga, fino a sei: comunicati, articoli, pagine ufficiali. Presstatic le legge e l'IA usa solo i fatti che contengono.</small><textarea name="sources" rows="4" spellcheck="false" placeholder="https://www.comune.latina.it/comunicato-ponte">{{ f.sources }}</textarea></label>
+    <label>Testo delle fonti, se non sono online<small>Comunicati ricevuti per email, appunti, dichiarazioni raccolte.</small><textarea name="notes" rows="6">{{ f.notes }}</textarea></label>
+  </div>
+  <div class="side">
+    <div class="panel sticky">
+      <h2><span class="hic ai">{{ ic.i("ia") }}</span>La bozza</h2>
+      <label>Modello<select name="model">{% for id, label in models %}<option value="{{ id }}"{% if id == model %} selected{% endif %}>{{ label }}</option>{% endfor %}</select></label>
+      <label>Lunghezza<select name="length">{% for id, label in [("short", "Breve, circa 400 parole"), ("medium", "Media, circa 700 parole"), ("long", "Lunga, circa 1.200 parole")] %}<option value="{{ id }}"{% if (f.length or "medium") == id %} selected{% endif %}>{{ label }}</option>{% endfor %}</select></label>
+      {% if can_image %}<label class="choice"><input type="checkbox" name="image"{% if f.image == "on" %} checked{% endif %}><span><strong>Genera anche l'immagine in evidenza</strong><small>Un'illustrazione, non una foto: non usarla per mostrare un fatto reale.</small></span></label>{% endif %}
+      <button class="btn ai wide" id="ai-go">Scrivi la bozza</button>
+      <p class="muted" style="margin:12px 0 0" id="ai-wait" hidden>Sto leggendo le fonti e scrivendo: può richiedere un paio di minuti. Non chiudere la pagina.</p>
+      <p class="muted" style="margin:16px 0 0;padding-top:14px;border-top:1px solid var(--line)">Il risultato è una <strong>bozza</strong> con titolo, sommario, testo con titoletti, categoria, tag, parole chiave per i link interni e le fonti in fondo. Nulla viene pubblicato: rileggi, controlla fatti, nomi e citazioni, poi pubblica tu.</p>
+    </div>
+  </div>
+</form>
+<script nonce="{{ csp_nonce }}">
+document.getElementById("ai-form").addEventListener("submit", () => {
+  const b = document.getElementById("ai-go"); b.disabled = true; b.textContent = "Sto scrivendo…";
+  document.getElementById("ai-wait").hidden = false;
+});
+</script>
+{% endif %}
+{% endblock %}

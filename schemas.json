@@ -1,0 +1,40 @@
+{
+  "NewsArticle": { "label": "Notizia (NewsArticle)", "article": true },
+  "Article": { "label": "Articolo (Article)", "article": true },
+  "BlogPosting": { "label": "Post del blog (BlogPosting)", "article": true },
+  "Recipe": {
+    "label": "Ricetta (Recipe)",
+    "fields": [
+      { "key": "recipeYield", "label": "Porzioni, per esempio 4 persone", "show": "Porzioni" },
+      { "key": "prepTime", "label": "Minuti di preparazione", "kind": "minutes", "show": "Preparazione" },
+      { "key": "cookTime", "label": "Minuti di cottura", "kind": "minutes", "show": "Cottura" },
+      { "key": "totalTime", "label": "Minuti totali", "kind": "minutes", "show": "Tempo totale" },
+      { "key": "recipeCategory", "label": "Portata, per esempio Primo piatto", "show": "Portata" },
+      { "key": "recipeCuisine", "label": "Cucina, per esempio Italiana", "show": "Cucina" },
+      { "key": "nutrition.calories", "label": "Calorie per porzione, per esempio 450 kcal", "show": "Calorie" },
+      { "key": "recipeIngredient", "label": "Ingredienti, uno per riga", "kind": "lines", "show": "Ingredienti" },
+      { "key": "recipeInstructions", "label": "Procedimento, un passaggio per riga", "kind": "steps", "show": "Procedimento" }
+    ],
+    "base": { "nutrition": { "@type": "NutritionInformation" } }
+  },
+  "Review": {
+    "label": "Recensione (Review)",
+    "fields": [
+      { "key": "itemReviewed.@type", "label": "Cosa recensisci: Product, Book, Movie, Restaurant, VideoGame…" },
+      { "key": "itemReviewed.name", "label": "Nome di ciò che recensisci", "show": "Recensione di" },
+      { "key": "reviewRating.ratingValue", "label": "Voto, per esempio 4,5", "kind": "number", "show": "Voto" },
+      { "key": "reviewRating.bestRating", "label": "Voto massimo (se vuoto: 5)", "kind": "number" }
+    ],
+    "base": { "itemReviewed": { "@type": "Product" }, "reviewRating": { "@type": "Rating", "bestRating": 5 } }
+  },
+  "VideoObject": {
+    "label": "Video (VideoObject)",
+    "dateKey": "uploadDate",
+    "imageKey": "thumbnailUrl",
+    "fields": [
+      { "key": "embedUrl", "label": "Link di incorporamento di YouTube o Vimeo, per esempio https://www.youtube-nocookie.com/embed/CODICE", "kind": "url" },
+      { "key": "contentUrl", "label": "Link al file video (facoltativo)", "kind": "url" },
+      { "key": "duration", "label": "Durata in minuti", "kind": "minutes", "show": "Durata" }
+    ]
+  }
+}

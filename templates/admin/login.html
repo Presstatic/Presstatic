@@ -1,0 +1,23 @@
+{% extends "admin/base.html" %}
+{% block title %}Accedi | Presstatic{% endblock %}
+{% block nav %}{% endblock %}
+{% block main %}
+<div class="auth">
+  <div class="auth-card">
+    <div class="auth-brand">
+      <img src="/admin/assets/logo.webp" alt="Presstatic" width="190" height="49">
+      <div><h2>La redazione, in un solo pannello.</h2></div>
+      <p>Scrivi, pubblichi e il sito è già online: pagine pronte, servite in pochi millisecondi.</p>
+    </div>
+    <form method="post" action="/admin/login" class="auth-form">
+      <h1>Accedi</h1>
+      <p class="sub">Entra con l'email e la password del tuo account.</p>
+      <label>Email<input type="email" name="email" autocomplete="username" required autofocus></label>
+      <label>Password<input type="password" name="password" autocomplete="current-password" required></label>
+      <button class="btn wide">Accedi</button>
+      <p class="auth-link"><a href="/admin/recupero">Password dimenticata?</a></p>
+      <p class="muted" style="margin:18px 0 0">Il primo utente si crea dal server con il comando <code>presstatic adduser</code>.</p>
+    </form>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,50 @@
+{% extends "admin/base.html" %}
+{% block title %}Aggiornamenti | Presstatic{% endblock %}
+{% block main %}
+{% import "admin/icons.html" as ic %}
+<header class="page-head">
+  <div><h1>Aggiornamenti</h1><p class="sub">Nuove versioni di Presstatic, verificate con la firma di chi lo pubblica.</p></div>
+</header>
+{% if restarting %}
+  <meta http-equiv="refresh" content="8;url=/admin/update">
+  <div class="panel"><p>Il pannello si sta riavviando con la nuova versione: questa pagina si ricarica da sola tra qualche secondo. Se non torna, attendi ancora un momento e ricarica.</p></div>
+{% else %}
+<div class="grid">
+  <div>
+    <div class="panel">
+      <div class="ver">
+        <span class="hic">{{ ic.i("fulmine", 24) }}</span>
+        <div><span class="muted">Versione installata</span><strong>{{ version }}</strong></div>
+      </div>
+      {% if unavailable %}
+        <p class="msg err">{{ unavailable }}</p>
+      {% elif rel %}
+        <div class="rel">
+          <h2 style="margin:0 0 8px">Disponibile la versione {{ rel.version }}</h2>
+          {% if rel.notes %}<pre>{{ rel.notes }}</pre>{% endif %}
+          <form method="post" action="/admin/update" data-busy="Sto aggiornando…">
+            <button class="btn">{{ ic.i("scarica", 18) }}Aggiorna ora alla {{ rel.version }}</button>
+          </form>
+        </div>
+      {% else %}
+        <p class="msg" style="margin:0 0 18px">Nessun aggiornamento in attesa.</p>
+      {% endif %}
+      <form method="post" action="/admin/update/check"><button class="btn ghost">{{ ic.i("aggiornamenti", 18) }}Controlla ora</button></form>
+    </div>
+  </div>
+  <div class="side">
+    <div class="panel">
+      <h2><span class="hic">{{ ic.i("scudo") }}</span>Come funziona</h2>
+      <p class="muted">Gli aggiornamenti arrivano dalle release di <code>{{ repo }}</code>. Presstatic controlla da solo ogni 12 ore; ogni aggiornamento viene installato solo se la sua firma è quella di chi pubblica Presstatic. Articoli, immagini, utenti e impostazioni restano al loro posto.</p>
+      <p class="muted" style="margin:0">Se dopo un aggiornamento qualcosa non va, sul server la versione precedente è in <code>presstatic.old</code>, nella stessa cartella del programma: basta rimetterla al posto di <code>presstatic</code> e riavviare il servizio.</p>
+    </div>
+  </div>
+</div>
+{% endif %}
+<style>.ver{display:flex;align-items:center;gap:16px;margin:0 0 20px}.ver .hic{width:52px;height:52px;border-radius:15px}.ver strong{display:block;font-size:30px;line-height:1.1;font-weight:800;color:var(--ink);letter-spacing:-.02em}.rel{border:1px solid #d3e1fc;background:#f5f9ff;border-radius:14px;padding:18px;margin:0 0 18px}.rel pre{white-space:pre-wrap;font:inherit;margin:0 0 14px;color:var(--muted)}</style>
+{% if fingerprint %}<div class="panel">
+  <h2><span class="hic">{{ ic.i("scudo") }}</span>Impronta della chiave di firma</h2>
+  <p class="muted" style="margin-top:-6px">Gli aggiornamenti si installano solo se sono firmati con la chiave che ha questa impronta. Deve coincidere con quella pubblicata sul sito di Presstatic: se è diversa, non aggiornare e segnalalo.</p>
+  <code style="display:block;padding:12px 14px;border-radius:10px;background:#f4f6fb;font-size:14px;letter-spacing:.02em;overflow-wrap:anywhere">{{ fingerprint }}</code>
+</div>{% else %}<div class="panel"><p class="muted" style="margin:0">Questo programma non contiene una chiave di firma: gli aggiornamenti dal pannello sono spenti.</p></div>{% endif %}
+{% endblock %}

@@ -1,0 +1,14 @@
+{#- Pagina statica (Chi siamo, Contatti, Privacy…). Vale per tutti i temi: usa le classi comuni .story, .col, .hero, .body. -#}
+{% extends theme ~ "/base.html" %}
+{% block main %}
+{% if builder %}{{ builder }}{% else %}
+<article class="story" data-pagefind-body>
+  <div class="col">
+    <h1>{{ post.title }}</h1>
+    {% if post.description %}<p class="standfirst">{{ post.description }}</p>{% endif %}
+  </div>
+  {% if image_attrs %}<div class="hero"><img {{ image_attrs|safe }} sizes="(min-width: 64rem) 64rem, 100vw" alt="{{ post.title }}"></div>{% endif %}
+  <div class="col"><div class="body">{{ body }}</div></div>
+</article>
+{% endif %}
+{% endblock %}

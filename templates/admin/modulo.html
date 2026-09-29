@@ -1,0 +1,76 @@
+{% extends "admin/base.html" %}
+{% block main %}
+{% import "admin/icons.html" as ic %}
+<header class="page-head">
+  <div><h1>{{ name if id else "Nuovo modulo" }}</h1><p class="sub">{% if id %}Nel sito: widget «Modulo» del page builder, oppure <code>[modulo {{ id }}]</code> nel testo di una pagina.{% else %}Parte con nome, email e messaggio: cambia quello che ti serve.{% endif %}</p></div>
+  {% if id %}<div class="actions"><a class="btn ghost" href="/admin/moduli/{{ id }}/messaggi">Messaggi ricevuti</a></div>{% endif %}
+</header>
+<form method="post" action="/admin/moduli/{{ id }}" id="fform">
+  <input type="hidden" name="fields" id="ffields">
+  <div class="panel">
+    <h2><span class="hic">{{ ic.i("documento") }}</span>Modulo</h2>
+    <div class="row">
+      <label>Nome<small>Lo vedi solo tu, nel pannello e nelle email.</small><input name="name" value="{{ name }}" maxlength="80" required></label>
+      <label>Inoltra i messaggi a<small>Un'email per ogni invio; rispondendo scrivi direttamente a chi ha compilato. Vuoto: solo nel pannello.</small><input type="email" name="notify" value="{{ notify }}" placeholder="redazione@…"></label>
+    </div>
+    <div class="row">
+      <label>Testo del pulsante<input name="button" value="{{ button }}" placeholder="Invia"></label>
+      <label>Messaggio dopo l'invio<input name="success" value="{{ success }}" placeholder="Grazie, il messaggio è arrivato alla redazione."></label>
+    </div>
+  </div>
+  <div class="panel">
+    <h2><span class="hic">{{ ic.i("menu") }}</span>Campi</h2>
+    <p class="panel-lead">Nell'ordine in cui li vedranno i lettori. «Scelta da un elenco»: scrivi le voci una per riga.</p>
+    <div id="frows" class="frows"></div>
+    <button type="button" class="btn ghost" id="fadd">{{ ic.i("nuovo", 17) }}Aggiungi un campo</button>
+  </div>
+  <div class="panel">
+    <h2><span class="hic">{{ ic.i("scudo") }}</span>Privacy</h2>
+    <label class="choice"><input type="checkbox" name="consent" id="fconsent"{% if consent %} checked{% endif %}><span><strong>Chiedi il consenso al trattamento dei dati</strong><small>Una casella obbligatoria prima del pulsante. Di solito serve quando raccogli dati personali (nome, email, telefono).</small></span></label>
+    <div class="row" id="fconsentbox">
+      <label>Testo della casella<input name="consent_text" value="{{ consent_text }}" placeholder="Ho letto l'informativa sulla privacy e acconsento al trattamento dei dati"></label>
+      <label>Indirizzo dell'informativa<small>Facoltativo: accanto al testo compare il link «Informativa».</small><input name="privacy_url" value="{{ privacy_url }}" placeholder="https://…/privacy/"></label>
+    </div>
+  </div>
+  <div class="actions" style="display:flex;gap:10px;justify-content:space-between">
+    <button class="btn">{{ ic.i("spunta", 17) }}Salva il modulo</button>
+  </div>
+</form>
+{% if id %}<form method="post" action="/admin/moduli/{{ id }}/elimina" data-confirm="Eliminare il modulo e tutti i suoi messaggi? Dove era inserito, sparisce dal sito." style="margin-top:14px"><button class="btn danger ghost">Elimina il modulo</button></form>{% endif %}
+<script type="application/json" id="fdata">{{ fields|safe }}</script>
+<style>
+.frows{display:grid;gap:10px;margin:0 0 14px}
+.frow{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1.3fr) auto auto;gap:10px;align-items:center;padding:12px;border:1px solid var(--line);border-radius:12px;background:var(--wash,#f6f8fc)}
+.frow input[type=text],.frow select{margin:0}.frow textarea{grid-column:1/-1;margin:0;min-height:70px}
+.frow .req{display:flex;gap:6px;align-items:center;font-size:13px;font-weight:600;white-space:nowrap}
+.frow .tools{display:flex;gap:4px}.frow .tools button{width:34px;height:34px;padding:0;border-radius:9px;border:1px solid var(--line);background:#fff;cursor:pointer;font-weight:800}
+.frow .tools button:hover{border-color:var(--accent,#1e6bff)}
+@media (max-width:700px){.frow{grid-template-columns:1fr 1fr}.frow .req,.frow .tools{grid-column:span 1}}
+</style>
+<script nonce="{{ csp_nonce }}">(() => {
+  const TYPES = {{ types_json|safe }}, box = document.getElementById('frows');
+  const fields = JSON.parse(document.getElementById('fdata').textContent || '[]');
+  const el = (t, a = {}, kids = []) => { const e = document.createElement(t); Object.assign(e, a); kids.forEach(k => e.append(k)); return e; };
+  function add(f = { label: '', type: 'text', required: false, options: '' }) {
+    const label = el('input', { type: 'text', value: f.label || '', placeholder: 'Etichetta, per esempio «Telefono»', maxLength: 120 });
+    const type = el('select', {}, TYPES.map(([v, t]) => el('option', { value: v, textContent: t, selected: v === f.type })));
+    const req = el('input', { type: 'checkbox', checked: !!f.required });
+    const opts = el('textarea', { value: f.options || '', placeholder: 'Una voce per riga' });
+    const up = el('button', { type: 'button', textContent: '↑', title: 'Sposta su' }), down = el('button', { type: 'button', textContent: '↓', title: 'Sposta giù' }), del = el('button', { type: 'button', textContent: '✕', title: 'Togli il campo' });
+    const row = el('div', { className: 'frow' }, [label, type, el('label', { className: 'req' }, [req, 'Obbligatorio']), el('div', { className: 'tools' }, [up, down, del]), opts]);
+    row.dataset.id = f.id || '';
+    const show = () => { opts.hidden = type.value !== 'select'; }; show();
+    type.addEventListener('change', show);
+    up.addEventListener('click', () => row.previousElementSibling && box.insertBefore(row, row.previousElementSibling));
+    down.addEventListener('click', () => row.nextElementSibling && box.insertBefore(row.nextElementSibling, row));
+    del.addEventListener('click', () => row.remove());
+    row._get = () => ({ id: row.dataset.id, label: label.value.trim(), type: type.value, required: req.checked, options: opts.value });
+    box.append(row); return label;
+  }
+  fields.forEach(f => add(f));
+  if (!fields.length) add();
+  document.getElementById('fadd').addEventListener('click', () => add().focus());
+  const c = document.getElementById('fconsent'), cb = document.getElementById('fconsentbox'), sync = () => { cb.hidden = !c.checked; }; sync(); c.addEventListener('change', sync);
+  document.getElementById('fform').addEventListener('submit', () => { document.getElementById('ffields').value = JSON.stringify([...box.children].map(r => r._get())); });
+})();</script>
+{% endblock %}

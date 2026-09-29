@@ -1,0 +1,20 @@
+{"conc": 50, "target": "WordPress + Nginx, senza cache", "page": "home", "rps": 22.26, "avg_ms": 1040.0, "p99_ms": 1980.0, "non2xx": 0, "timeouts": 183, "errors": 0, "requests": 223}
+{"conc": 50, "target": "WordPress + Nginx, senza cache", "page": "articolo", "rps": 24.75, "avg_ms": 1690.0, "p99_ms": 2000.0, "non2xx": 0, "timeouts": 72, "errors": 0, "requests": 248}
+{"conc": 50, "target": "WordPress + Nginx con cache di pagina", "page": "home", "rps": 36738.1, "avg_ms": 1.23, "p99_ms": 1.98, "non2xx": 0, "timeouts": 0, "errors": 0, "requests": 367468}
+{"conc": 50, "target": "WordPress + Nginx con cache di pagina", "page": "articolo", "rps": 43168.46, "avg_ms": 1.08, "p99_ms": 1.74, "non2xx": 0, "timeouts": 0, "errors": 0, "requests": 431744}
+{"conc": 50, "target": "WordPress + Apache, senza cache", "page": "home", "rps": 21.07, "avg_ms": 1020.0, "p99_ms": 1990.0, "non2xx": 0, "timeouts": 170, "errors": 3, "requests": 211}
+{"conc": 50, "target": "WordPress + Apache, senza cache", "page": "articolo", "rps": 26.47, "avg_ms": 1640.0, "p99_ms": 2000.0, "non2xx": 0, "timeouts": 60, "errors": 3, "requests": 265}
+{"conc": 50, "target": "Presstatic + Nginx", "page": "home", "rps": 54270.45, "avg_ms": 0.89, "p99_ms": 1.44, "non2xx": 0, "timeouts": 0, "errors": 0, "requests": 548140}
+{"conc": 50, "target": "Presstatic + Nginx", "page": "articolo", "rps": 65708.13, "avg_ms": 0.75013, "p99_ms": 1.22, "non2xx": 0, "timeouts": 0, "errors": 0, "requests": 663665}
+{"conc": 50, "target": "Presstatic + Apache", "page": "home", "rps": 23718.83, "avg_ms": 9.74, "p99_ms": 107.73, "non2xx": 0, "timeouts": 0, "errors": 10, "requests": 237201}
+{"conc": 50, "target": "Presstatic + Apache", "page": "articolo", "rps": 25936.63, "avg_ms": 8.52, "p99_ms": 102.06, "non2xx": 0, "timeouts": 0, "errors": 1, "requests": 261958}
+{"conc": 10, "target": "WordPress + Nginx, senza cache", "page": "home", "rps": 21.21, "avg_ms": 457.57, "p99_ms": 578.58, "non2xx": 0, "timeouts": 0, "errors": 0, "requests": 170}
+{"conc": 10, "target": "WordPress + Nginx con cache di pagina", "page": "home", "rps": 36364.24, "avg_ms": 0.24797, "p99_ms": 0.40900000000000003, "non2xx": 0, "timeouts": 0, "errors": 0, "requests": 294557}
+{"conc": 10, "target": "WordPress + Apache, senza cache", "page": "home", "rps": 20.84, "avg_ms": 461.84, "p99_ms": 595.82, "non2xx": 0, "timeouts": 0, "errors": 0, "requests": 167}
+{"conc": 10, "target": "Presstatic + Nginx", "page": "home", "rps": 53931.98, "avg_ms": 0.18218, "p99_ms": 0.308, "non2xx": 0, "timeouts": 0, "errors": 0, "requests": 436854}
+{"conc": 10, "target": "Presstatic + Apache", "page": "home", "rps": 25219.63, "avg_ms": 0.44627999999999995, "p99_ms": 1.86, "non2xx": 0, "timeouts": 0, "errors": 0, "requests": 204282}
+{"conc": 200, "target": "WordPress + Nginx, senza cache", "page": "home", "rps": 20.55, "avg_ms": 1040.0, "p99_ms": 1990.0, "non2xx": 0, "timeouts": 123, "errors": 0, "requests": 165}
+{"conc": 200, "target": "WordPress + Nginx con cache di pagina", "page": "home", "rps": 31968.04, "avg_ms": 5.62, "p99_ms": 7.89, "non2xx": 0, "timeouts": 0, "errors": 0, "requests": 259044}
+{"conc": 200, "target": "WordPress + Apache, senza cache", "page": "home", "rps": 21.19, "avg_ms": 1080.0, "p99_ms": 1990.0, "non2xx": 0, "timeouts": 128, "errors": 117, "requests": 170}
+{"conc": 200, "target": "Presstatic + Nginx", "page": "home", "rps": 50920.07, "avg_ms": 3.74, "p99_ms": 5.41, "non2xx": 0, "timeouts": 0, "errors": 0, "requests": 409810}
+{"conc": 200, "target": "Presstatic + Apache", "page": "home", "rps": 21785.86, "avg_ms": 98.32, "p99_ms": 695.16, "non2xx": 0, "timeouts": 0, "errors": 55, "requests": 174522}

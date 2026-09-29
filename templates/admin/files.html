@@ -1,0 +1,52 @@
+{% extends "admin/base.html" %}
+{% block title %}File | Presstatic{% endblock %}
+{% block main %}
+{% import "admin/icons.html" as ic %}
+<header class="page-head">
+  <div><h1>File</h1><p class="sub">I file del sito pubblico (immagini caricate e pagine generate) e i temi personalizzati. Le pagine HTML si rigenerano a ogni pubblicazione: per aggiungerne di tue usa la sezione Pagine; per un tema carica uno ZIP in Temi ed estrailo.</p></div>
+</header>
+<nav class="crumbs" aria-label="Percorso">
+  <a href="/admin/files">{{ ic.i("file", 16) }}Cartelle</a>
+  {% for name, rel in l.crumbs %}<span aria-hidden="true">/</span><a href="/admin/files?path={{ rel|urlencode }}">{{ name }}</a>{% endfor %}
+</nav>
+{% if not l.rel %}
+  <div class="roots">
+    {% for id, label in l.roots %}<a class="panel root" href="/admin/files?path={{ id }}"><span class="hic">{{ ic.i("file", 22) }}</span><span><strong>{{ label }}</strong><span class="muted">{{ id }}/</span></span></a>{% endfor %}
+  </div>
+{% else %}
+  <div class="panel upbar">
+    <form method="post" action="/admin/files" enctype="multipart/form-data" class="upform">
+      <input type="hidden" name="action" value="upload"><input type="hidden" name="path" value="{{ l.rel }}">
+      <label>Carica file<small>Anche più di uno, o uno ZIP.</small><input type="file" name="files" multiple required></label>
+      <button class="btn">{{ ic.i("carica", 18) }}Carica</button>
+    </form>
+    <form method="post" action="/admin/files" enctype="multipart/form-data" class="upform">
+      <input type="hidden" name="action" value="mkdir"><input type="hidden" name="path" value="{{ l.rel }}">
+      <label>Nuova cartella<small>Una cartella per volta, senza barre.</small><input name="name" required placeholder="nome"></label>
+      <button class="btn ghost">{{ ic.i("cartella-nuova", 18) }}Crea</button>
+    </form>
+  </div>
+  <table>
+    <thead><tr><th>Nome</th><th>Dimensione</th><th>Modificato</th><th></th></tr></thead>
+    <tbody>
+    {% for e in l.entries %}
+      <tr>
+        <td><div class="fname">{% if e.is_dir %}<span class="fic dir">{{ ic.i("file", 18) }}</span><a href="/admin/files?path={{ e.rel|urlencode }}">{{ e.name }}</a>{% else %}<span class="fic">{{ ic.i("archivio" if e.is_zip else "documento", 18) }}</span><a href="/admin/files/download?path={{ e.rel|urlencode }}">{{ e.name }}</a>{% endif %}</div></td>
+        <td class="date">{{ e.size }}</td>
+        <td class="date">{{ e.modified }}</td>
+        <td style="white-space:nowrap;text-align:right">
+          {% if e.is_zip %}<form method="post" action="/admin/files" enctype="multipart/form-data" style="display:inline"><input type="hidden" name="action" value="extract"><input type="hidden" name="path" value="{{ e.rel }}"><button class="btn ghost small">{{ ic.i("archivio", 16) }}Estrai qui</button></form>{% endif %}
+          <form method="post" action="/admin/files" enctype="multipart/form-data" style="display:inline" data-confirm="Eliminare {{ e.name }}{% if e.is_dir %} e tutto il suo contenuto{% endif %}? Non si può annullare."><input type="hidden" name="action" value="delete"><input type="hidden" name="path" value="{{ e.rel }}"><button class="btn ghost small danger" aria-label="Elimina {{ e.name }}">{{ ic.i("cestino", 16) }}Elimina</button></form>
+        </td>
+      </tr>
+    {% else %}
+      <tr><td colspan="4"><div class="empty" style="padding:28px"><span class="hic">{{ ic.i("file", 24) }}</span><p>Cartella vuota. Carica un file qui sopra.</p></div></td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+{% endif %}
+<style>.crumbs{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:0 0 18px;font-size:14px;font-weight:700}.crumbs a{display:inline-flex;align-items:center;gap:7px;padding:7px 12px;border-radius:999px;background:#fff;border:1px solid var(--line);text-decoration:none;color:var(--text)}.crumbs a:last-child{background:#eef3ff;border-color:#d3e1fc;color:var(--blue-d)}.crumbs span{color:var(--faint)}
+.roots{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px}.root{display:flex;align-items:center;gap:14px;margin:0;text-decoration:none;transition:border-color .15s ease,transform .15s ease}.root:hover{border-color:#c4d1ec;transform:translateY(-1px)}.root .hic{width:46px;height:46px;border-radius:13px}.root strong{display:block;color:var(--ink);font-size:16px}.root .muted{font-size:13px}
+.upbar{display:flex;gap:18px 28px;flex-wrap:wrap}.upform{display:flex;gap:10px;align-items:flex-end;flex:1;min-width:280px}.upform label{flex:1;margin:0}
+.fname{display:flex;align-items:center;gap:11px;font-weight:700}.fname a{color:var(--ink);text-decoration:none}.fname a:hover{color:var(--blue-d)}.fic{display:grid;place-items:center;width:34px;height:34px;border-radius:10px;background:#f1f4fa;color:var(--muted)}.fic.dir{background:#eef3ff;color:var(--blue-d)}</style>
+{% endblock %}

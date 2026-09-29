@@ -1,0 +1,24 @@
+{% extends "admin/base.html" %}
+{% block main %}
+{% import "admin/icons.html" as ic %}
+<header class="page-head">
+  <div><h1>{{ name }}: messaggi</h1><p class="sub">{{ entries|length }} ricevuti{% if keep != "0" %}, cancellati da soli dopo {{ keep }} giorni{% endif %}.</p></div>
+  <div class="actions"><a class="btn ghost" href="/admin/moduli/{{ id }}">Modifica il modulo</a>{% if entries %}<a class="btn" href="/admin/moduli/{{ id }}/csv">{{ ic.i("carica", 17) }}Esporta CSV</a>{% endif %}</div>
+</header>
+{% if entries %}<form method="post" action="/admin/moduli/{{ id }}/messaggi" data-confirm="Eliminare i messaggi scelti?">
+  <div class="msgs">{% for e in entries %}<article class="msg{% if not e.seen %} new{% endif %}">
+    <label class="pick"><input type="checkbox" name="ids" value="{{ e.id }}" aria-label="Scegli il messaggio del {{ e.date }}"></label>
+    <div><p class="when">{{ e.date }}{% if not e.seen %} <span class="count">nuovo</span>{% endif %}</p>
+      <dl>{% for l in e.lines %}<dt>{{ l[0] }}</dt><dd>{{ l[1] }}</dd>{% endfor %}</dl></div>
+  </article>{% endfor %}</div>
+  <button class="btn danger ghost" style="margin-top:14px">Elimina i messaggi scelti</button>
+</form>
+{% else %}<div class="panel"><p style="margin:0">Nessun messaggio ancora. Quando qualcuno compila il modulo nel sito, lo trovi qui{% if notify %} e arriva anche a {{ notify }}{% endif %}.</p></div>{% endif %}
+<style>
+.msgs{display:grid;gap:10px}.msg{display:grid;grid-template-columns:auto 1fr;gap:14px;padding:16px 18px;border:1px solid var(--line);border-radius:14px;background:#fff}
+.msg.new{border-color:color-mix(in srgb,var(--accent,#1e6bff) 45%,var(--line));box-shadow:inset 3px 0 0 var(--accent,#1e6bff)}
+.msg .pick input{width:18px;height:18px;margin-top:3px}.msg .when{margin:0 0 8px;font-size:13px;color:var(--muted,#667)}
+.msg dl{display:grid;grid-template-columns:minmax(120px,max-content) 1fr;gap:4px 16px;margin:0}.msg dt{font-weight:700;font-size:14px}.msg dd{margin:0;white-space:pre-wrap;overflow-wrap:anywhere}
+@media (max-width:700px){.msg dl{grid-template-columns:1fr}.msg dd{margin-bottom:6px}}
+</style>
+{% endblock %}

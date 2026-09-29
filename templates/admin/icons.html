@@ -1,0 +1,48 @@
+{#- Icone del pannello: tratto 1,9 px su griglia 24, colore dal testo intorno. Uso: {{ ic.i("articoli") }} -#}
+{% macro i(n, size=20) -%}
+<svg class="ic" width="{{ size }}" height="{{ size }}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+{%- if n == "articoli" %}<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M9 13h6M9 17h6M9 9h2"/>
+{%- elif n == "pagine" %}<rect x="3" y="4" width="18" height="16" rx="2.5"/><path d="M3 9h18M9 9v11"/>
+{%- elif n == "ia" %}<path d="M11 3.5l1.9 4.9 4.9 1.9-4.9 1.9L11 17.1l-1.9-4.9-4.9-1.9 4.9-1.9z"/><path d="M18.5 14.5l.9 2.1 2.1.9-2.1.9-.9 2.1-.9-2.1-2.1-.9 2.1-.9z"/>
+{%- elif n == "nuovo" %}<path d="M12 5v14M5 12h14"/>
+{%- elif n == "utenti" %}<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><path d="M16 4.7a3.5 3.5 0 0 1 0 6.6M18.2 14.3A6.5 6.5 0 0 1 21.5 20"/>
+{%- elif n == "impostazioni" %}<path d="M4 6h9M17 6h3M4 12h3M11 12h9M4 18h11M19 18h1"/><circle cx="15" cy="6" r="2"/><circle cx="9" cy="12" r="2"/><circle cx="17" cy="18" r="2"/>
+{%- elif n == "integrazioni" %}<path d="M9 2.5v5M15 2.5v5"/><path d="M6 7.5h12V11a6 6 0 0 1-12 0z"/><path d="M12 17v4.5"/>
+{%- elif n == "file" %}<path d="M3 7.5a2 2 0 0 1 2-2h4l2 2.2h8a2 2 0 0 1 2 2V17a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+{%- elif n == "aggiornamenti" %}<path d="M20 11a8 8 0 0 0-14.7-4.4L3 9"/><path d="M3 4v5h5"/><path d="M4 13a8 8 0 0 0 14.7 4.4L21 15"/><path d="M21 20v-5h-5"/>
+{%- elif n == "profilo" %}<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>
+{%- elif n == "esci" %}<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5M21 12H9"/>
+{%- elif n == "cerca" %}<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>
+{%- elif n == "esterno" %}<path d="M14 4h6v6M20 4l-9 9"/><path d="M19 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1h5"/>
+{%- elif n == "menu" %}<path d="M4 7h16M4 12h16M4 17h16"/>
+{%- elif n == "chiudi" %}<path d="M6 6l12 12M18 6 6 18"/>
+{%- elif n == "globo" %}<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/>
+{%- elif n == "nuvola" %}<path d="M7 18.5a4.5 4.5 0 0 1-.7-8.9A6 6 0 0 1 17.8 9a4.2 4.2 0 0 1-.3 9.5z"/>
+{%- elif n == "immagine" %}<rect x="3" y="4" width="18" height="16" rx="2.5"/><circle cx="9" cy="10" r="2"/><path d="m21 16-5-5-9 9"/>
+{%- elif n == "etichetta" %}<path d="M3 12V4a1 1 0 0 1 1-1h8l9 9-9 9z"/><circle cx="7.8" cy="7.8" r="1.4"/>
+{%- elif n == "cronologia" %}<path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l3 2"/>
+{%- elif n == "codice" %}<path d="m16 18 6-6-6-6M8 6l-6 6 6 6"/>
+{%- elif n == "annunci" %}<path d="M3 10.5v3a1 1 0 0 0 1 1h2.5L12 19V5L6.5 9.5H4a1 1 0 0 0-1 1z"/><path d="M15.5 9a4 4 0 0 1 0 6M18.5 6a8 8 0 0 1 0 12"/>
+{%- elif n == "piede" %}<rect x="3" y="4" width="18" height="16" rx="2.5"/><path d="M3 15h18M7 18h4"/>
+{%- elif n == "tema" %}<path d="M12 3a9 9 0 1 0 0 18c1.1 0 1.6-.8 1.6-1.6 0-1-.9-1.4-.9-2.4 0-1 .8-1.6 1.8-1.6H17a4 4 0 0 0 4-4C21 6.8 17 3 12 3z"/><circle cx="7.5" cy="11" r="1"/><circle cx="10" cy="7" r="1"/><circle cx="15" cy="7.5" r="1"/>
+{%- elif n == "lucchetto" %}<rect x="4" y="11" width="16" height="10" rx="2.5"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>
+{%- elif n == "scarica" %}<path d="M12 4v11M7 10l5 5 5-5M5 20h14"/>
+{%- elif n == "carica" %}<path d="M12 20V9M7 14l5-5 5 5M5 4h14"/>
+{%- elif n == "cestino" %}<path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/>
+{%- elif n == "spunta" %}<path d="M5 12.5l4.5 4.5L19 7.5"/>
+{%- elif n == "archivio" %}<rect x="3" y="4" width="18" height="5" rx="1.2"/><path d="M5 9v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V9M10 13h4"/>
+{%- elif n == "occhio" %}<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>
+{%- elif n == "calendario" %}<rect x="3" y="5" width="18" height="16" rx="2.5"/><path d="M3 10h18M8 3v4M16 3v4"/>
+{%- elif n == "indietro" %}<path d="M19 12H5M11 18l-6-6 6-6"/>
+{%- elif n == "info" %}<circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/>
+{%- elif n == "cartella-nuova" %}<path d="M3 7.5a2 2 0 0 1 2-2h4l2 2.2h8a2 2 0 0 1 2 2V17a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M12 11v5M9.5 13.5h5"/>
+{%- elif n == "documento" %}<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/>
+{%- elif n == "scudo" %}<path d="M12 3l8 3v6c0 4.5-3.4 8.2-8 9-4.6-.8-8-4.5-8-9V6z"/><path d="M8.8 12.2l2.2 2.2 4.2-4.4"/>
+{%- elif n == "fulmine" %}<path d="M13 2 4 14h7l-1 8 9-12h-7z"/>
+{%- elif n == "grafico" %}<path d="M4 20V11M10 20V5M16 20v-6M21 20H3"/>
+{%- elif n == "campanella" %}<path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/>
+{%- elif n == "griglia" %}<rect x="3" y="3" width="18" height="7" rx="1.5"/><rect x="3" y="14" width="8" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>
+{%- elif n == "posta" %}<rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="m4 7 8 6 8-6"/>
+{%- endif -%}
+</svg>
+{%- endmacro %}

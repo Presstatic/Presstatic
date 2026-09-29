@@ -1,0 +1,88 @@
+{% extends "admin/base.html" %}
+{% block title %}{{ "Pagine" if kind == "page" else "Articoli" }} | Presstatic{% endblock %}
+{% block main %}
+{% import "admin/icons.html" as ic %}
+{% set page = kind == "page" %}
+<header class="page-head">
+  <div>
+    <h1>{{ "Pagine" if page else "Articoli" }}</h1>
+    <p class="sub">{{ "Le pagine fisse del sito, come Chi siamo, Contatti e Privacy." if page else "Tutto quello che la redazione ha scritto, dal più recente." }}</p>
+  </div>
+  <div class="actions"><a class="btn" href="/admin/edit/0{% if page %}?k=page{% endif %}">{{ ic.i("nuovo", 18) }}{{ "Nuova pagina" if page else "Nuovo articolo" }}</a></div>
+</header>
+<div class="toolbar">
+  <nav class="tabs" aria-label="Filtra per stato">
+    {% set k = "&k=page" if page else "" %}
+    {% for key, label in [("", "Tutti"), ("pub", "Pubblicati"), ("pending", "In revisione"), ("sched", "Programmati"), ("draft", "Bozze")] %}
+    <a href="/admin?s={{ key }}{{ k }}"{% if tab == key %} class="on" aria-current="page"{% endif %}>{{ label }}<span>{{ total if not key else (counts[key] or 0) }}</span></a>
+    {% endfor %}
+  </nav>
+  <form class="search" method="get" action="/admin" role="search">{% if tab %}<input type="hidden" name="s" value="{{ tab }}">{% endif %}{% if page %}<input type="hidden" name="k" value="page">{% endif %}<input type="search" name="q" value="{{ q or '' }}" placeholder="Cerca nel titolo e nel testo" aria-label="Cerca nel titolo e nel testo"><button class="btn ghost">Cerca</button></form>
+</div>
+{% if rows %}
+{% set can_bulk = me.role in ["admin", "editor"] %}
+<form method="post" action="/admin/bulk" id="bulkform">
+<input type="hidden" name="back" value="/admin?{% if page %}k=page&{% endif %}{% if tab %}s={{ tab }}&{% endif %}{% if q %}q={{ q|urlencode }}{% endif %}">
+<table class="list">
+<thead><tr>{% if can_bulk %}<th class="ck"><input type="checkbox" id="ckall" aria-label="Scegli tutti"></th>{% endif %}<th>Titolo</th><th>Categoria</th><th>Stato</th><th>Data</th></tr></thead>
+<tbody>
+{% for r in rows %}<tr>
+  {% if can_bulk %}<td class="ck"><input type="checkbox" name="ids" value="{{ r.id }}" aria-label="Scegli «{{ r.title }}»"></td>{% endif %}
+  <td><div class="title-cell">
+    {% if r.image %}<img class="thumb" src="{{ r.image }}" alt="" loading="lazy">{% else %}<span class="thumb"></span>{% endif %}
+    <div>
+      <a class="t" href="/admin/edit/{{ r.id }}">{{ r.title }}</a>
+      <div class="by"><span>{{ r.author }}</span>{% if r.notes %}<span class="notes-chip">{{ ic.i("documento", 13) }}{{ r.notes }} {{ "nota" if r.notes == 1 else "note" }}</span>{% endif %}{% if r.editing %}<span class="editing">{{ ic.i("lucchetto", 13) }}{{ r.editing }} lo sta modificando</span>{% endif %}{% if r.state == "Pubblicato" %}<a href="{{ r.url }}" target="_blank" rel="noopener">{{ ic.i("esterno", 14) }}Apri sul sito</a>{% endif %}</div>
+    </div>
+  </div></td>
+  <td>{% if r.category %}<span class="chip">{{ r.category }}</span>{% endif %}</td>
+  <td><span class="state {{ r.state|replace(' ', '-') }}">{{ r.state }}</span></td>
+  <td class="date">{{ r.date }}</td>
+</tr>{% endfor %}
+</tbody>
+</table>
+{% if can_bulk %}<div class="bulkbar" id="bulkbar" hidden>
+  <strong id="bulkn">1 scelto</strong>
+  <select name="action" id="bulkact" aria-label="Azione">
+    <option value="publish">Pubblica</option><option value="draft">Riporta in bozza</option>
+    <option value="feature">Metti in evidenza in home</option><option value="unfeature">Togli dall'evidenza</option>
+    <option value="category">Sposta in un'altra categoria…</option><option value="tag">Aggiungi un tag…</option>
+    <option value="delete">Elimina</option>
+  </select>
+  <input name="value" id="bulkval" hidden placeholder="Nome" aria-label="Categoria o tag" list="bulkcats">
+  <datalist id="bulkcats">{% for c in rows|map(attribute="category")|unique %}{% if c %}<option value="{{ c }}">{% endif %}{% endfor %}</datalist>
+  <button class="btn" id="bulkgo">{{ ic.i("spunta", 17) }}Applica</button>
+  <button type="button" class="btn ghost" id="bulkclear">Annulla la scelta</button>
+</div>{% endif %}
+</form>
+<script nonce="{{ csp_nonce }}">
+(() => {
+  const f = document.getElementById('bulkform'), bar = document.getElementById('bulkbar'); if (!bar) return;
+  const boxes = () => [...f.querySelectorAll('input[name=ids]')], act = document.getElementById('bulkact'), val = document.getElementById('bulkval');
+  const upd = () => { const n = boxes().filter(b => b.checked).length; bar.hidden = !n; document.getElementById('bulkn').textContent = n + (n === 1 ? ' scelto' : ' scelti'); document.getElementById('ckall').checked = n === boxes().length; };
+  f.addEventListener('change', e => { if (e.target.id === 'ckall') boxes().forEach(b => b.checked = e.target.checked); upd(); });
+  act.onchange = () => { val.hidden = !['category', 'tag'].includes(act.value); val.required = !val.hidden; val.placeholder = act.value === 'tag' ? 'Tag da aggiungere' : 'Nuova categoria'; if (!val.hidden) val.focus(); };
+  document.getElementById('bulkclear').onclick = () => { boxes().forEach(b => b.checked = false); upd(); };
+  f.addEventListener('submit', e => {
+    const n = boxes().filter(b => b.checked).length;
+    if (act.value === 'delete' && !confirm('Eliminare ' + n + (n === 1 ? ' articolo' : ' articoli') + ' con la loro cronologia? I loro indirizzi risponderanno «pagina non trovata».')) e.preventDefault();
+    else document.getElementById('bulkgo').disabled = true;
+  });
+})();
+</script>
+<style>
+.ck{width:38px;text-align:center}.ck input{width:18px;height:18px;margin:0;accent-color:var(--blue)}
+.bulkbar{position:sticky;bottom:16px;z-index:20;display:flex;align-items:center;flex-wrap:wrap;gap:10px;margin:16px 0 0;padding:12px 16px;border-radius:18px;background:#0b1638;color:#fff;box-shadow:0 20px 40px -18px rgba(10,18,51,.6)}
+.bulkbar strong{margin-right:auto}
+.bulkbar select,.bulkbar input{width:auto;min-width:180px;margin:0;border-color:rgba(255,255,255,.25)}
+.bulkbar .ghost{background:transparent;color:#fff;border-color:rgba(255,255,255,.3)}
+.notes-chip{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:999px;background:#eef3ff;color:var(--blue-d);font-weight:700;font-size:12px}
+</style>
+{% else %}
+<div class="panel empty">
+  <span class="hic">{{ ic.i("pagine" if page else "articoli", 26) }}</span>
+  <p>{% if q %}Nessun articolo contiene «{{ q }}» nel titolo o nel testo.{% elif tab %}In questa sezione non c'è niente.{% elif me.role == "author" %}Non hai ancora scritto articoli. Quando lo invii in revisione, un redattore lo controlla e lo pubblica.{% else %}Non c'è ancora niente. Inizia dal primo: sarà online appena premi Pubblica.{% endif %}</p>
+  <a class="btn" href="/admin/edit/0{% if page %}?k=page{% endif %}">{{ ic.i("nuovo", 18) }}{{ "Crea una pagina" if page else "Scrivi un articolo" }}</a>
+</div>
+{% endif %}
+{% endblock %}

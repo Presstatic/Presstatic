@@ -1,0 +1,65 @@
+{% extends "admin/base.html" %}
+{% block title %}Categorie | Presstatic{% endblock %}
+{% block main %}
+{% import "admin/icons.html" as ic %}
+<header class="page-head">
+  <div><h1>Categorie</h1><p class="sub">Le sezioni del giornale. Una categoria può stare dentro un'altra (Sport &gt; Calcio): gli articoli di Calcio compaiono anche nella pagina Sport. La descrizione compare in cima alla pagina della categoria e aiuta Google a capire di cosa parla.</p></div>
+</header>
+<div class="grid">
+  <div>
+    {% if tree %}<div class="panel" style="padding:8px 0">
+      <ul class="ctree">{% for c in tree %}
+        <li style="--d:{{ c.depth }}">
+          <details>
+            <summary><span class="cname">{% if c.depth %}<span class="cbranch" aria-hidden="true">└</span>{% endif %}{{ c.name }}</span><span class="chip">{{ c.count }} {{ "articolo" if c.count == 1 else "articoli" }}</span><a class="cview" href="{{ base }}/category/{{ c.slug }}/" target="_blank" rel="noopener" aria-label="Apri la pagina sul sito">{{ ic.i("esterno", 15) }}</a></summary>
+            <div class="cedit">
+              <form method="post" action="/admin/categorie">
+                <input type="hidden" name="name" value="{{ c.name }}">
+                <label>Dentro la categoria<select name="parent"><option value="">Nessuna, è una sezione principale</option>{% for o in tree %}{% if o.name != c.name %}<option value="{{ o.name }}"{% if o.name == c.parent %} selected{% endif %}>{{ "— " * o.depth }}{{ o.name }}</option>{% endif %}{% endfor %}</select></label>
+                <label>Descrizione<small>Una o due frasi: di cosa si occupa la sezione. Compare sul sito sotto il titolo della pagina.</small><textarea name="description" rows="2" maxlength="500">{{ c.description }}</textarea></label>
+                <button class="btn small">{{ ic.i("spunta", 16) }}Salva</button>
+              </form>
+              <div class="cside">
+                <form method="post" action="/admin/categorie/rinomina" class="row"><input type="hidden" name="old" value="{{ c.name }}"><input name="new" value="{{ c.name }}" aria-label="Nuovo nome" maxlength="100"><button class="btn ghost small">Rinomina</button></form>
+                <form method="post" action="/admin/categorie/elimina" class="row" data-confirm="Eliminare la categoria «{{ c.name }}»? Gli articoli passano a quella scelta; il vecchio indirizzo porta lì."><input type="hidden" name="name" value="{{ c.name }}"><select name="to" aria-label="Sposta gli articoli in"><option value="">Articoli senza categoria</option>{% for o in tree %}{% if o.name != c.name %}<option value="{{ o.name }}">Sposta in «{{ o.name }}»</option>{% endif %}{% endfor %}</select><button class="btn danger small">Elimina</button></form>
+              </div>
+            </div>
+          </details>
+        </li>{% endfor %}
+      </ul>
+    </div>{% else %}<div class="panel empty"><span class="hic">{{ ic.i("etichetta", 26) }}</span><p>Non ci sono ancora categorie: creane una qui accanto, o scrivila nell'editor di un articolo.</p></div>{% endif %}
+  </div>
+  <div class="side">
+    <form method="post" action="/admin/categorie" class="panel">
+      <h2><span class="hic">{{ ic.i("nuovo") }}</span>Nuova categoria</h2>
+      <label>Nome<input name="name" required maxlength="100" placeholder="Per esempio: Calcio"></label>
+      <label>Dentro la categoria<select name="parent"><option value="">Nessuna, è una sezione principale</option>{% for o in tree %}<option value="{{ o.name }}">{{ "— " * o.depth }}{{ o.name }}</option>{% endfor %}</select></label>
+      <label>Descrizione<textarea name="description" rows="3" maxlength="500"></textarea></label>
+      <button class="btn wide">{{ ic.i("nuovo", 18) }}Crea la categoria</button>
+    </form>
+    <div class="panel">
+      <h2><span class="hic">{{ ic.i("info") }}</span>Da sapere</h2>
+      <ul class="imp-list" style="margin:0;padding-left:18px;display:grid;gap:8px;font-size:14px">
+        <li><strong>Rinominare</strong> cambia la categoria in tutti gli articoli; il vecchio indirizzo della pagina porta a quello nuovo.</li>
+        <li><strong>Eliminare</strong> sposta gli articoli nella categoria scelta; le sottocategorie salgono di un livello.</li>
+        <li>Ogni articolo ha una <strong>categoria principale</strong> e, se serve, altre categorie: si scelgono nell'editor.</li>
+      </ul>
+    </div>
+  </div>
+</div>
+<style>
+.ctree{list-style:none;margin:0;padding:0}
+.ctree li{border-bottom:1px solid var(--line)}
+.ctree li:last-child{border-bottom:0}
+.ctree summary{display:flex;align-items:center;gap:10px;padding:12px 18px 12px calc(18px + var(--d) * 26px);cursor:pointer;list-style:none}
+.ctree summary::-webkit-details-marker{display:none}
+.ctree summary:hover{background:#f7f9fd}
+.cname{flex:1;font-weight:700;color:var(--ink)}
+.cbranch{color:#9aa6c2;margin-right:6px}
+.cview{display:inline-flex;color:var(--muted)}
+.cedit{display:grid;grid-template-columns:1.3fr 1fr;gap:18px;padding:6px 18px 18px calc(18px + var(--d) * 26px)}
+.cside{display:grid;gap:10px;align-content:start;margin-top:22px}
+.cside .row{gap:6px;flex-wrap:nowrap}.cside input,.cside select{margin:0}
+@media (max-width:760px){.cedit{grid-template-columns:1fr}.cside{margin-top:0}}
+</style>
+{% endblock %}

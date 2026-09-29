@@ -1,0 +1,157 @@
+{% extends "admin/base.html" %}
+{% block title %}Installazione | Presstatic{% endblock %}
+{% block nav %}{% endblock %}
+{% block main %}
+<style>
+.setup{max-width:760px;margin:0 auto 48px}
+.setup-brand{display:flex;align-items:center;justify-content:space-between;gap:16px;margin:0 0 22px;padding:22px 26px;border-radius:22px;color:#c9d4f3;
+  background:radial-gradient(90% 90% at 0% 0%,rgba(30,107,255,.45),transparent 60%),radial-gradient(70% 90% at 100% 100%,rgba(124,92,255,.35),transparent 70%),linear-gradient(150deg,#0a1233,#0f1d56);box-shadow:0 24px 50px -30px rgba(18,56,199,.6)}
+.setup-brand img{width:176px;height:auto}
+.setup-brand span{font-size:14px;font-weight:600}
+.steps-bar{display:flex;gap:8px;list-style:none;padding:0;margin:0 0 22px;counter-reset:s;flex-wrap:wrap}
+.steps-bar li{counter-increment:s;flex:1;min-width:6.5rem;display:flex;align-items:center;gap:8px;font-size:13px;font-weight:700;color:var(--muted);padding-top:10px;border-top:4px solid #dfe5f1;border-radius:2px}
+.steps-bar li::before{content:counter(s);display:grid;place-items:center;flex:none;width:22px;height:22px;border-radius:50%;background:#e6ebf5;color:var(--muted);font-size:12px;font-weight:800}
+.steps-bar li.on{color:var(--ink);border-image:linear-gradient(90deg,#1238c7,#06b6f0) 1}
+.steps-bar li.on::before{background:var(--grad);color:#fff}
+.setup h1{font-size:26px;margin:0 0 6px}
+.lead{color:var(--muted);margin:0 0 22px}
+.nav-btns{display:flex;justify-content:space-between;gap:12px;margin-top:26px;padding-top:20px;border-top:1px solid var(--line)}
+.themes{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media (max-width:36rem){.themes{grid-template-columns:1fr}}
+.theme-card{display:block;border:1px solid var(--line);border-radius:16px;padding:14px;cursor:pointer;font-weight:500;margin:0;background:#fff;transition:border-color .15s ease,box-shadow .15s ease}
+.theme-card:hover{border-color:#c5d2ec}
+.theme-card:has(input:checked){border-color:var(--blue);background:#f6f9ff;box-shadow:0 0 0 3px rgba(30,107,255,.14)}
+.theme-card input{display:inline-block;width:18px;height:18px;margin:0 8px 0 0}
+.theme-card strong{color:var(--ink)}
+.theme-card small{display:block;color:var(--muted);font-size:13px}
+.mock{border:1px solid var(--line);border-radius:10px;padding:.8rem;margin:.7rem 0 .6rem;background:#fff;height:9.5rem;overflow:hidden}
+.mock-classico .t{font:700 1.35rem/1 Georgia,serif;text-align:center;border-bottom:3px double #222;padding-bottom:.4rem}
+.mock-classico .r{display:grid;grid-template-columns:1fr 2fr 1fr;gap:.4rem;margin-top:.5rem}
+.mock-classico .r i{display:block;height:4.6rem;background:#e5e2dc}.mock-classico .r i:nth-child(2){background:#c9c2b6}
+.mock-moderno .t{font:900 1.1rem/1 var(--sans);letter-spacing:-.04em;border-top:4px solid var(--c,#e0452b);padding-top:.45rem}
+.mock-moderno .r{display:grid;grid-template-columns:2fr 1fr 1fr;grid-template-rows:1fr 1fr;gap:.35rem;margin-top:.55rem;height:5.6rem}
+.mock-moderno .r i{display:block;background:#dfe3ea;border-radius:6px}.mock-moderno .r i:first-child{grid-row:span 2;background:#2a2f3a}
+.swatches{display:flex;gap:8px;margin:-6px 0 18px;flex-wrap:wrap}
+.swatches button{width:34px;height:34px;border-radius:50%;border:3px solid #fff;box-shadow:0 0 0 1px var(--line-2),var(--shadow-sm);cursor:pointer;padding:0}
+.swatches button:hover{transform:scale(1.08)}
+.summary{display:grid;grid-template-columns:auto 1fr;gap:10px 18px;font-size:15px;margin:0;padding:18px;border-radius:14px;background:#f7f9fd;border:1px solid var(--line)}
+.summary dt{color:var(--muted)}.summary dd{margin:0;font-weight:700;color:var(--ink);overflow-wrap:anywhere}
+.note{display:flex;gap:10px;background:#eef4ff;border:1px solid #d3e1fc;border-radius:14px;padding:13px 16px;font-size:14px;color:#153a8f;margin:0 0 20px}
+</style>
+<form class="setup" id="setup" method="post" action="/admin/setup" enctype="multipart/form-data">
+  <div class="setup-brand"><img src="/admin/assets/logo.webp" alt="Presstatic" width="176" height="46"><span>Installazione guidata</span></div>
+  <ol class="steps-bar"><li class="on">Benvenuto</li><li>Il sito</li><li>Il tuo account</li><li>Aspetto</li><li>Collegamenti</li><li>Conferma</li></ol>
+  {% if msg %}<p class="msg err" role="alert">{{ msg }}</p>{% endif %}
+
+  <section class="panel" data-step>
+    <h1>Benvenuto in Presstatic</h1>
+    <p class="lead">In cinque passi configuri il sito. Alla fine Presstatic genera tutte le pagine e il sito è online.</p>
+    <p class="note">Non c'è nessun database da collegare: Presstatic salva tutto in un file interno che si crea da solo.</p>
+    <label>Codice di installazione<small>Serve a dimostrare che il server è tuo. Lo trovi nel terminale, alla fine dello script di installazione, oppure nel file <code>setup-token.txt</code> nella cartella del sito.</small>
+      <input name="token" value="{{ token or '' }}" required autocomplete="off" spellcheck="false"></label>
+    <div class="nav-btns"><span></span><button type="button" class="btn" data-next>Iniziamo</button></div>
+  </section>
+
+  <section class="panel" data-step hidden>
+    <h1>Il sito</h1>
+    <p class="lead">Come si chiama e dove si trova. Potrai cambiare tutto in seguito dalle Impostazioni.</p>
+    <label>Nome del sito<input name="site_name" required placeholder="Cronaca Pontina"></label>
+    <label>Indirizzo del sito<small>Quello che i lettori scrivono nel browser, con https e senza barra finale.</small><input name="base_url" type="url" required value="{{ guess }}"></label>
+    <label>Descrizione<small>Una frase: compare sotto la testata e su Google.</small><input name="description" placeholder="Notizie da Latina e provincia, ogni giorno"></label>
+    <div class="row">
+      <label style="flex:1">Lingua<select name="lang">{% for id, label in [("it", "Italiano"), ("en", "English"), ("es", "Español"), ("fr", "Français"), ("de", "Deutsch"), ("pt", "Português")] %}<option value="{{ id }}">{{ label }}</option>{% endfor %}</select></label>
+      <label style="flex:2">Fuso orario<input name="timezone" value="Europe/Rome" list="zones" required></label>
+      <datalist id="zones">{% for z in ["Europe/Rome", "Europe/London", "Europe/Madrid", "Europe/Paris", "Europe/Berlin", "Europe/Zurich", "America/New_York", "America/Sao_Paulo", "America/Argentina/Buenos_Aires"] %}<option value="{{ z }}">{% endfor %}</datalist>
+    </div>
+    <div class="nav-btns"><button type="button" class="btn ghost" data-back>Indietro</button><button type="button" class="btn" data-next>Avanti</button></div>
+  </section>
+
+  <section class="panel" data-step hidden>
+    <h1>Il tuo account</h1>
+    <p class="lead">Sarai l'amministratore del sito. Redattori e autori li aggiungi dopo, dal pannello.</p>
+    <label>Nome e cognome<small>È la firma dei tuoi articoli.</small><input name="name" required autocomplete="name"></label>
+    <label>Email<small>Serve per accedere al pannello.</small><input name="email" type="email" required autocomplete="email"></label>
+    <div class="row">
+      <label style="flex:1">Password<small>Almeno 12 caratteri.</small><input name="password" type="password" required minlength="12" autocomplete="new-password"></label>
+      <label style="flex:1">Ripeti la password<small>&nbsp;</small><input name="password2" type="password" required minlength="12" autocomplete="new-password"></label>
+    </div>
+    <div class="nav-btns"><button type="button" class="btn ghost" data-back>Indietro</button><button type="button" class="btn" data-next>Avanti</button></div>
+  </section>
+
+  <section class="panel" data-step hidden>
+    <h1>Aspetto</h1>
+    <p class="lead">Scegli il tema e il colore. Puoi cambiarli quando vuoi: il sito si aggiorna da solo.</p>
+    <div class="themes">
+      <label class="theme-card"><input type="radio" name="theme" value="classico" checked><strong>Classico</strong>
+        <div class="mock mock-classico"><div class="t">Il Giornale</div><div class="r"><i></i><i></i><i></i></div></div>
+        <small>Prima pagina da quotidiano, caratteri con grazie, eleganza.</small></label>
+      <label class="theme-card"><input type="radio" name="theme" value="moderno"><strong>Moderno</strong>
+        <div class="mock mock-moderno"><div class="t">Il Giornale</div><div class="r"><i></i><i></i><i></i><i></i><i></i></div></div>
+        <small>Mosaico di apertura, schede, tema scuro automatico.</small></label>
+    </div>
+    <label style="margin-top:20px">Colore principale<input type="color" name="accent" value="#c8102e"></label>
+    <div class="swatches" aria-label="Colori suggeriti">{% for c in ["#c8102e", "#e0452b", "#1f4fd8", "#0f766e", "#7c3aed", "#111827"] %}<button type="button" style="background:{{ c }}" data-color="{{ c }}" aria-label="Colore {{ c }}"></button>{% endfor %}</div>
+    <label style="margin-top:1rem">Logo (facoltativo)<small>PNG con sfondo trasparente, orizzontale, almeno 400 pixel di larghezza. Senza logo, in testata compare il nome del sito.</small><input type="file" name="logo_upload" accept="image/png,image/jpeg,image/webp"></label>
+    <label style="margin:0">Sezioni del giornale<small>Una per riga: diventano il menu, le categorie e i blocchi della home. Aggiungine o toglile quando vuoi.</small><textarea name="menu" rows="5">Cronaca
+Politica
+Economia
+Sport
+Cultura</textarea></label>
+    <div class="nav-btns"><button type="button" class="btn ghost" data-back>Indietro</button><button type="button" class="btn" data-next>Avanti</button></div>
+  </section>
+
+  <section class="panel" data-step hidden>
+    <h1>Collegamenti</h1>
+    <p class="lead">Tutto facoltativo: puoi saltare questo passo e completarlo dopo da Impostazioni e Integrazioni.</p>
+    <fieldset><legend>Cloudflare</legend>
+      <label>Zone ID<small>Dashboard di Cloudflare, pagina Panoramica del dominio, colonna a destra.</small><input name="cf_zone" autocomplete="off"></label>
+      <label style="margin:0">Token API<small>Con i permessi Cache Rules, Zone Settings e Cache Purge. Presstatic attiva da solo la cache e il Tiered Cache.</small><input name="cf_token" type="password" autocomplete="new-password"></label>
+    </fieldset>
+    <fieldset><legend>Scrittura con l'intelligenza artificiale</legend>
+      <label>Chiave API di Anthropic (Claude)<input name="anthropic_key" type="password" autocomplete="new-password"></label>
+      <label style="margin:0">Chiave API di OpenAI<small>Serve anche per generare le immagini.</small><input name="openai_key" type="password" autocomplete="new-password"></label>
+    </fieldset>
+    <p class="muted">Per avvisare Google a ogni pubblicazione (Indexing API) serve qualche passaggio su Google Cloud: la guida è nella pagina Integrazioni, dopo l'installazione.</p>
+    <div class="nav-btns"><button type="button" class="btn ghost" data-back>Indietro</button><button type="button" class="btn" data-next>Avanti</button></div>
+  </section>
+
+  <section class="panel" data-step hidden>
+    <h1>Tutto pronto</h1>
+    <p class="lead">Controlla i dati. Premendo il pulsante Presstatic crea il tuo account, genera il sito e ti porta nel pannello.</p>
+    <dl class="summary" id="summary"></dl>
+    <div class="nav-btns"><button type="button" class="btn ghost" data-back>Indietro</button><button class="btn" id="go">Installa e metti online il sito</button></div>
+  </section>
+</form>
+<script nonce="{{ csp_nonce }}">
+const form = document.getElementById("setup"), steps = [...form.querySelectorAll("[data-step]")], bar = [...form.querySelectorAll(".steps-bar li")];
+let cur = 0;
+function show(i) {
+  steps.forEach((s, k) => s.hidden = k !== i);
+  bar.forEach((b, k) => b.classList.toggle("on", k <= i));
+  cur = i; window.scrollTo(0, 0);
+  if (i === steps.length - 1) summary();
+}
+function valid() {
+  for (const el of steps[cur].querySelectorAll("input, select, textarea")) if (!el.reportValidity()) return false;
+  const p = form.elements.password, p2 = form.elements.password2;
+  if (cur === 2 && p.value !== p2.value) { p2.setCustomValidity("Le due password non coincidono."); p2.reportValidity(); p2.setCustomValidity(""); return false; }
+  return true;
+}
+form.querySelectorAll("[data-next]").forEach(b => b.onclick = () => valid() && show(cur + 1));
+form.querySelectorAll("[data-back]").forEach(b => b.onclick = () => show(cur - 1));
+form.querySelectorAll("[data-color]").forEach(b => b.onclick = () => form.elements.accent.value = b.dataset.color);
+function summary() {
+  const e = form.elements, rows = [
+    ["Sito", e.site_name.value], ["Indirizzo", e.base_url.value], ["Amministratore", e.name.value + " (" + e.email.value + ")"],
+    ["Tema", e.theme.value === "moderno" ? "Moderno" : "Classico"], ["Colore", e.accent.value],
+    ["Sezioni", e.menu.value.split("\n").map(x => x.trim()).filter(Boolean).join(", ")],
+    ["Cloudflare", e.cf_zone.value && e.cf_token.value ? "sarà configurato" : "da configurare dopo"],
+    ["Intelligenza artificiale", e.anthropic_key.value || e.openai_key.value ? "chiave inserita" : "da configurare dopo"],
+  ];
+  const dl = document.getElementById("summary"); dl.textContent = "";
+  for (const [k, v] of rows) { const dt = document.createElement("dt"), dd = document.createElement("dd"); dt.textContent = k; dd.textContent = v; dl.append(dt, dd); }
+}
+form.addEventListener("submit", () => { const b = document.getElementById("go"); b.disabled = true; b.textContent = "Sto creando il sito…"; });
+{% if msg and token %}show(0);{% endif %}
+</script>
+{% endblock %}

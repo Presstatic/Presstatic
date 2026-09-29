@@ -1,0 +1,59 @@
+{% extends "admin/base.html" %}
+{% block title %}Indicizzazione rapida | Presstatic{% endblock %}
+{% block main %}
+{% import "admin/icons.html" as ic %}
+<header class="page-head">
+  <div><h1>Indicizzazione rapida</h1><p class="sub">Presstatic avvisa i motori di ricerca appena pubblichi, modifichi o togli un articolo, invece di aspettare che passino da soli: le notizie compaiono prima nei risultati. Google con la sua Indexing API; Bing, Yandex, Seznam, Naver e gli altri con IndexNow.</p></div>
+</header>
+<form method="post" action="/admin/indicizzazione" class="grid">
+<input type="hidden" name="sv" value="{{ sv }}">
+<div>
+  <div class="panel" id="google">
+    <h2><span class="hic">{{ ic.i("globo") }}</span>Google Indexing API</h2>
+    <p class="panel-lead">Avvisa Google appena un articolo esce, cambia o viene tolto, invece di aspettare che lo trovi da solo. Google dichiara l'Indexing API per offerte di lavoro e dirette video: per le notizie non garantisce nulla, ma l'invio è rapido e gratuito.</p>
+    <label class="choice"><input type="checkbox" name="google_on"{% if s.google_on == "on" %} checked{% endif %}><span><strong>Avvisa Google a ogni pubblicazione</strong><small>E quando un articolo viene ritirato o eliminato.</small></span></label>
+    <label class="choice"><input type="checkbox" name="google_updates"{% if s.google_updates == "on" %} checked{% endif %}><span><strong>Avvisa anche per le modifiche</strong><small>Agli articoli già pubblicati. La quota di Google è di circa 200 indirizzi al giorno: attivalo solo se ne hai bisogno.</small></span></label>
+    <label style="margin-top:18px">Chiave del service account (file JSON)<small>{% if has.google_sa %}Chiave salvata{% if sa_email %} per <code>{{ sa_email }}</code>{% endif %}: lascia vuoto per mantenerla.{% else %}Incolla qui tutto il contenuto del file JSON scaricato da Google Cloud.{% endif %}</small><textarea name="google_sa" rows="5"{% if has.google_sa %} placeholder="••••••••••••••••••••" class="secret-saved"{% else %} placeholder='{ "type": "service_account", "project_id": "…", "private_key": "…", "client_email": "…" }'{% endif %} autocomplete="off" spellcheck="false"></textarea></label>
+    <details{% if not has.google_sa %} open{% endif %}>
+      <summary><strong>Come si configura, passo per passo</strong> <span class="muted">circa 10 minuti, una volta sola</span></summary>
+      <ol class="steps">
+        <li>Apri <a href="https://console.cloud.google.com/projectcreate" target="_blank" rel="noopener">Google Cloud Console</a> con l'account Google che gestisce il sito e crea un progetto, per esempio «Presstatic».</li>
+        <li>Nel progetto apri <a href="https://console.cloud.google.com/apis/library/indexing.googleapis.com" target="_blank" rel="noopener">Web Search Indexing API</a> e premi <strong>Abilita</strong>.</li>
+        <li>Vai in <a href="https://console.cloud.google.com/iam-admin/serviceaccounts" target="_blank" rel="noopener">IAM e amministrazione &gt; Account di servizio</a> e premi <strong>Crea account di servizio</strong>. Basta un nome, per esempio «indicizzazione»; i ruoli non servono. Copia l'email che ti viene assegnata (finisce con <code>iam.gserviceaccount.com</code>).</li>
+        <li>Apri l'account di servizio appena creato, scheda <strong>Chiavi</strong>, <strong>Aggiungi chiave &gt; Crea nuova chiave</strong>, formato <strong>JSON</strong>. Il browser scarica un file: tienilo al sicuro, è una password.</li>
+        <li>Apri <a href="https://search.google.com/search-console" target="_blank" rel="noopener">Search Console</a>, scegli la proprietà del sito ({{ base }}), poi <strong>Impostazioni &gt; Utenti e autorizzazioni &gt; Aggiungi utente</strong>. Incolla l'email dell'account di servizio e scegli <strong>Proprietario</strong>: con permessi inferiori Google rifiuta le richieste.</li>
+        <li>Apri il file JSON con un editor di testo, copia tutto il contenuto e incollalo nel campo qui sopra. Spunta «Avvisa Google a ogni pubblicazione» e salva.</li>
+        <li>Premi <strong>Prova il collegamento</strong>. Se risponde «Collegamento riuscito» hai finito: da ora ogni articolo pubblicato viene segnalato a Google.</li>
+      </ol>
+    </details>
+  </div>
+  <div class="panel" id="indexnow">
+    <h2><span class="hic">{{ ic.i("globo") }}</span>IndexNow</h2>
+    <p class="panel-lead">Il protocollo aperto usato da Bing, Yandex, Seznam, Naver e altri motori: un solo invio li raggiunge tutti. Non serve nessun account: il sito dimostra di essere tuo con un piccolo file di chiave, che Presstatic crea da solo. Google non aderisce a IndexNow: per Google c'è la sezione qui sopra.</p>
+    <label class="choice"><input type="checkbox" name="indexnow_on"{% if s.indexnow_on == "on" %} checked{% endif %}><span><strong>Avvisa i motori di IndexNow</strong><small>A ogni pubblicazione, modifica o eliminazione. Non ci sono quote da risparmiare, quindi si inviano anche le modifiche.</small></span></label>
+    {% if s.indexnow_key and s.indexnow_on == "on" %}<p class="muted" style="margin:0">Chiave del sito: <code>{{ s.indexnow_key }}</code><br>File di verifica: <a href="{{ base }}/{{ s.indexnow_key }}.txt" target="_blank" rel="noopener">{{ base }}/{{ s.indexnow_key }}.txt</a></p>{% endif %}
+  </div>
+</div>
+<div class="side">
+  <div class="panel sticky"><button class="btn wide">{{ ic.i("spunta", 18) }}Salva</button></div>
+  <div class="panel">
+    <h2><span class="hic">{{ ic.i("cronologia") }}</span>Ultimi invii</h2>
+    {% if log %}<ul class="log">
+      {% for l in log %}<li><span class="{{ 'ok' if l.ok else 'ko' }}">{{ "Inviato" if l.ok else "Errore" }}</span> <span class="muted">{{ l.at }}{% if l.kind == "IndexNow" %} · IndexNow{% else %} · Google{% endif %}</span>{% if l.url %}<code>{{ l.url }}</code>{% endif %}{% if not l.ok %}<span>{{ l.note }}</span>{% endif %}</li>{% endfor %}
+    </ul>{% else %}<p class="muted" style="margin:0">Ancora nessun invio.</p>{% endif %}
+  </div>
+</div>
+</form>
+<form method="post" action="/admin/indicizzazione/indexnow" class="panel testrow">
+  <span class="hic">{{ ic.i("globo") }}</span>
+  <div><strong>Prova IndexNow</strong><span class="muted">Invia l'indirizzo della home. Funziona quando il sito è online al suo indirizzo definitivo: i motori controllano il file della chiave.</span></div>
+  <button class="btn ghost">Prova IndexNow</button>
+</form>
+<form method="post" action="/admin/indicizzazione/prova" class="panel testrow">
+  <span class="hic">{{ ic.i("globo") }}</span>
+  <div><strong>Verifica la chiave di Google</strong><span class="muted">Usa la chiave salvata: salva prima le modifiche.</span></div>
+  <button class="btn ghost">Prova il collegamento con Google</button>
+</form>
+<style>.log{list-style:none;margin:0;padding:0;display:grid;gap:12px;font-size:13px}.log li{display:grid;gap:3px;padding-bottom:12px;border-bottom:1px solid var(--line)}.log li:last-child{border:0;padding:0}.log code{overflow-wrap:anywhere;font-size:12px}
+.testrow{display:flex;align-items:center;gap:14px;flex-wrap:wrap}.testrow div{flex:1;min-width:220px}.testrow strong{display:block;color:var(--ink)}.testrow .muted{display:block}</style>
+{% endblock %}

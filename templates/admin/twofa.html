@@ -1,0 +1,72 @@
+{% extends "admin/base.html" %}
+{% block title %}Verifica in due passaggi | Presstatic{% endblock %}
+{% block main %}
+{% import "admin/icons.html" as ic %}
+<header class="page-head">
+  <div>
+    <a class="back" href="/admin/profile">{{ ic.i("indietro", 16) }}Il mio profilo</a>
+    <h1>Verifica in due passaggi</h1>
+    <p class="sub">Oltre alla password, per entrare serve un codice che cambia ogni 30 secondi sull'app del tuo telefono. Chi scopre la password da solo non entra.</p>
+  </div>
+</header>
+{% if codes %}
+<div class="panel tf-codes">
+  <h2><span class="hic">{{ ic.i("lucchetto") }}</span>I tuoi codici di recupero</h2>
+  <p class="panel-lead">Servono se perdi il telefono: ognuno vale un solo accesso. <strong>Salvali adesso</strong> in un posto sicuro (un gestore di password, o stampati): non li vedrai più.</p>
+  <ol class="codes" id="codes">{% for c in codes %}<li><code>{{ c }}</code></li>{% endfor %}</ol>
+  <div class="row"><button type="button" class="btn" data-copy-codes>{{ ic.i("documento", 18) }}Copia i codici</button><button type="button" class="btn ghost" data-print>Stampa</button><a class="btn ghost" href="/admin/2fa">Ho salvato i codici</a></div>
+</div>
+{% elif on %}
+<div class="grid">
+  <div class="panel">
+    <div class="tf-status"><span class="hic ok-ic">{{ ic.i("scudo", 24) }}</span><div><h2 style="margin:0">Attiva</h2><p class="muted" style="margin:2px 0 0">Ad ogni accesso ti chiediamo il codice dell'app. Codici di recupero ancora disponibili: <strong>{{ codes_left }}</strong> su 10.</p></div></div>
+    <p class="muted">Se hai usato quasi tutti i codici di recupero, disattiva e riattiva la verifica: riceverai 10 codici nuovi.</p>
+  </div>
+  <div class="side">
+    <form method="post" action="/admin/2fa/disable" class="panel">
+      <h2><span class="hic">{{ ic.i("lucchetto") }}</span>Disattiva</h2>
+      <p class="muted">Per sicurezza serve la tua password.</p>
+      <label>Password<input type="password" name="password" autocomplete="current-password" required></label>
+      <button class="btn danger wide">Disattiva la verifica in due passaggi</button>
+    </form>
+  </div>
+</div>
+{% else %}
+<div class="grid">
+  <div class="panel">
+    <ol class="tf-steps">
+      <li><strong>Installa un'app di autenticazione</strong><span>Google Authenticator, Microsoft Authenticator, 1Password, Bitwarden o Aegis: vanno bene tutte, sono gratuite.</span></li>
+      <li><strong>Inquadra il codice QR con l'app</strong><span>Nell'app scegli «Aggiungi account» o il pulsante +, poi «Scansiona un codice QR».</span>
+        <div class="tf-qr">{{ qr|safe }}</div>
+        <span>Non riesci a inquadrarlo? Scegli «Inserisci una chiave» e scrivi questa:</span><code class="tf-key">{{ key }}</code></li>
+      <li><strong>Scrivi il codice che compare nell'app</strong>
+        <form method="post" action="/admin/2fa/enable" class="tf-confirm"><input name="code" class="code-in" inputmode="numeric" autocomplete="one-time-code" maxlength="6" required placeholder="000000" aria-label="Codice di 6 cifre"><button class="btn">{{ ic.i("spunta", 18) }}Attiva</button></form></li>
+    </ol>
+  </div>
+  <div class="side">
+    <div class="panel">
+      <h2><span class="hic">{{ ic.i("info") }}</span>Come funziona</h2>
+      <p class="muted">L'app e il pannello conoscono la stessa chiave segreta e ne ricavano lo stesso codice di 6 cifre ogni 30 secondi, senza bisogno di rete: il telefono funziona anche offline.</p>
+      <p class="muted" style="margin:0">Dopo l'attivazione ricevi 10 codici di recupero da usare se perdi il telefono. Se perdi anche quelli, un amministratore può togliere la verifica dal tuo profilo.</p>
+    </div>
+  </div>
+</div>
+{% endif %}
+<style>
+.tf-steps{list-style:none;margin:0;padding:0;display:grid;gap:22px;counter-reset:tf}
+.tf-steps > li{counter-increment:tf;position:relative;padding-left:48px;display:grid;gap:6px}
+.tf-steps > li::before{content:counter(tf);position:absolute;left:0;top:-2px;width:32px;height:32px;border-radius:50%;display:grid;place-items:center;background:var(--grad);color:#fff;font-weight:800}
+.tf-steps strong{color:var(--ink);font-size:16px}
+.tf-steps span{color:var(--muted);font-size:14.5px}
+.tf-qr{width:236px;padding:8px;margin:8px 0;border-radius:18px;background:#fff;border:1px solid var(--line);box-shadow:var(--shadow)}
+.tf-qr svg{display:block;width:100%;height:auto}
+.tf-key{display:inline-block;width:max-content;max-width:100%;padding:8px 12px;font-size:15px;letter-spacing:.06em;overflow-wrap:anywhere}
+.tf-confirm{display:flex;gap:10px;align-items:stretch;max-width:340px;margin-top:4px}
+.tf-confirm input{margin:0;font-size:24px}
+.tf-status{display:flex;align-items:center;gap:14px;margin:0 0 14px}
+.ok-ic{width:50px;height:50px;border-radius:15px;background:linear-gradient(135deg,#e7f8ef,#dcf5e8);color:#0e7440;box-shadow:inset 0 0 0 1px #bfe9d2}
+.codes{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;list-style:none;margin:0 0 20px;padding:0}
+.codes code{display:block;padding:10px;text-align:center;font-size:17px;letter-spacing:.08em;background:#f4f7ff}
+@media print{.side-nav,.topbar,.row,.page-head .back{display:none!important}.content{margin:0}}
+</style>
+{% endblock %}

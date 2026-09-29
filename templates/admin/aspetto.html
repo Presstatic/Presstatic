@@ -1,0 +1,60 @@
+{% extends "admin/base.html" %}
+{% block main %}
+{% import "admin/icons.html" as ic %}
+<header class="page-head">
+  <div><h1>Aspetto</h1><p class="sub">Il tema del sito, il colore principale e la modalità chiara o scura.</p></div>
+  <div class="actions"><a class="btn ghost" href="{{ base }}/" target="_blank" rel="noopener">Apri il sito</a></div>
+</header>
+<form method="post" action="/admin/aspetto" enctype="multipart/form-data">
+  <div class="panel">
+    <h2><span class="hic">{{ ic.i("immagine") }}</span>Tema</h2>
+    <div class="tgrid">{% for t in themes %}<label class="tcard"><input type="radio" name="theme" value="{{ t.id }}"{% if t.id == theme %} checked{% endif %}>
+      <span class="tprev">{% if t.preview %}<img src="{{ t.preview }}" alt="Anteprima del tema {{ t.name }}" width="600" height="417" loading="lazy">{% else %}<span class="tnone">Tema personalizzato</span>{% endif %}</span>
+      <span class="tinfo"><strong>{{ t.name }}</strong>{% if t.id == theme %}<span class="count">Attivo</span>{% endif %}<small>{{ t.desc }}</small></span></label>{% endfor %}</div>
+  </div>
+  <div class="panel">
+    <h2><span class="hic">{{ ic.i("immagine") }}</span>Logo e icona del sito</h2>
+    <div class="row">
+      <div><div class="brandprev">{% if logo %}<img src="{{ logo }}" alt="Logo attuale">{% else %}<strong>{{ site_name }}</strong><small>Senza logo si vede il nome del sito</small>{% endif %}</div>
+        <label>Logo<small>PNG, SVG o WebP, orizzontale e con sfondo trasparente.</small><input type="file" name="logo_upload" accept="image/png,image/svg+xml,image/webp,image/jpeg"></label>
+        {% if logo %}<label class="choice" style="margin-top:6px"><input type="checkbox" name="logo_remove" value="on"><span>Togli il logo e usa il nome del sito</span></label>{% endif %}</div>
+      <div><div class="brandprev icon">{% if favicon %}<img src="{{ favicon }}" alt="Icona attuale">{% else %}<span class="letter">{{ site_name[:1] }}</span><small>Senza icona si vede l'iniziale del sito</small>{% endif %}</div>
+        <label>Icona (favicon)<small>Quadrata, PNG, almeno 512×512 pixel: compare nelle schede del browser e sul telefono.</small><input type="file" name="favicon_upload" accept="image/png"></label>
+        {% if favicon %}<label class="choice" style="margin-top:6px"><input type="checkbox" name="favicon_remove" value="on"><span>Togli l'icona</span></label>{% endif %}</div>
+    </div>
+  </div>
+  <div class="panel">
+    <h2><span class="hic">{{ ic.i("impostazioni") }}</span>Colore principale</h2>
+    <p class="panel-lead">Per sezioni, link, pulsanti e dettagli. Scegline uno pronto o il tuo.</p>
+    <div class="swatches">{% for c in ["#c8102e", "#d9480f", "#1d4ed8", "#0f766e", "#7e22ce", "#15803d", "#111827"] %}<button type="button" class="sw" data-c="{{ c }}" style="background:{{ c }}" aria-label="Usa il colore {{ c }}"></button>{% endfor %}
+      <input type="color" name="accent" id="accent" value="{{ accent or '#c8102e' }}" aria-label="Colore personalizzato"><code id="accent-v">{{ accent or "#c8102e" }}</code></div>
+  </div>
+  <div class="panel">
+    <h2><span class="hic">{{ ic.i("scudo") }}</span>Modalità chiara e scura</h2>
+    <div class="modes">{% for v, l, d in [("auto", "Automatica", "Segue il telefono o il computer di chi legge"), ("light", "Sempre chiara", "Anche se il dispositivo è in modalità scura"), ("dark", "Sempre scura", "Anche se il dispositivo è in modalità chiara")] %}
+      <label class="mcard"><input type="radio" name="color_mode" value="{{ v }}"{% if color_mode == v %} checked{% endif %}><span><strong>{{ l }}</strong><small>{{ d }}</small></span></label>{% endfor %}</div>
+    <label class="choice" style="margin-top:14px"><input type="checkbox" name="mode_toggle" value="on"{% if mode_toggle %} checked{% endif %}><span><strong>Pulsante sole/luna nel sito</strong><small>Ogni lettore sceglie la modalità che preferisce; la scelta si ricorda e si applica prima che la pagina compaia.</small></span></label>
+  </div>
+  <div class="actions"><button class="btn">{{ ic.i("spunta", 17) }}Salva e aggiorna il sito</button></div>
+</form>
+<style>
+.tgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px}
+.tcard{position:relative;display:grid;gap:10px;padding:10px;border:2px solid var(--line);border-radius:16px;cursor:pointer;background:#fff}
+.tcard input{position:absolute;opacity:0}.tcard:has(input:checked){border-color:var(--blue);box-shadow:0 0 0 4px rgba(30,107,255,.12)}
+.tcard:has(input:focus-visible){outline:3px solid var(--blue);outline-offset:2px}
+.tprev{display:block;overflow:hidden;border-radius:10px;border:1px solid var(--line);aspect-ratio:600/417;background:#f3f5f9}.tprev img{display:block;width:100%;height:auto}
+.tnone{display:grid;place-items:center;height:100%;color:var(--muted);font-weight:700}
+.tinfo{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;padding:0 4px 4px}.tinfo strong{font-size:16px}.tinfo small{flex-basis:100%;color:var(--muted);font-size:13px}
+.swatches{display:flex;flex-wrap:wrap;align-items:center;gap:10px}.sw{width:38px;height:38px;border-radius:50%;border:3px solid #fff;box-shadow:0 0 0 1px var(--line);cursor:pointer}
+.swatches input[type=color]{width:52px;height:40px;padding:2px;margin:0;border-radius:10px}
+.modes{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px}
+.mcard{display:flex;gap:10px;padding:14px;border:2px solid var(--line);border-radius:14px;cursor:pointer;background:#fff}.mcard:has(input:checked){border-color:var(--blue)}
+.mcard small{display:block;color:var(--muted);font-size:13px}
+.brandprev{display:flex;align-items:center;gap:12px;min-height:84px;margin-bottom:10px;padding:14px;border:1px solid var(--line);border-radius:14px;background:#f7f9fd}
+.brandprev img{max-height:56px;max-width:100%}.brandprev.icon img{width:56px;height:56px;border-radius:12px}.brandprev strong{font-size:20px}.brandprev small{color:var(--muted);font-size:12.5px}
+.brandprev .letter{display:grid;place-items:center;width:56px;height:56px;border-radius:12px;background:var(--blue);color:#fff;font:800 26px var(--sans)}
+</style>
+<script nonce="{{ csp_nonce }}">(() => { const a = document.getElementById('accent'), v = document.getElementById('accent-v');
+  document.querySelectorAll('.sw').forEach(b => b.addEventListener('click', () => { a.value = b.dataset.c; v.textContent = b.dataset.c; }));
+  a.addEventListener('input', () => { v.textContent = a.value; }); })();</script>
+{% endblock %}

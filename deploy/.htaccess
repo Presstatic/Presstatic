@@ -1,0 +1,22 @@
+# Presstatic con Apache: copia questo file dentro la cartella public/ del sito.
+Options -Indexes
+DirectoryIndex index.html
+RedirectMatch 404 ^/admin
+ErrorDocument 404 /404.html
+
+<IfModule mod_headers.c>
+  Header always set X-Content-Type-Options "nosniff"
+  <FilesMatch "\.html$">
+    Header set Cache-Control "public, max-age=60"
+  </FilesMatch>
+  <FilesMatch "\.(jpe?g|png|webp|gif|avif|woff2)$">
+    Header set Cache-Control "public, max-age=31536000, immutable"
+  </FilesMatch>
+  <FilesMatch "\.(xml|txt)$">
+    Header set Cache-Control "public, max-age=300"
+  </FilesMatch>
+</IfModule>
+
+<IfModule mod_deflate.c>
+  AddOutputFilterByType DEFLATE text/html application/xml application/rss+xml text/plain
+</IfModule>

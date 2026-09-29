@@ -1,0 +1,30 @@
+{#- Intestazione comune a tutti i temi: SEO, social, dati strutturati, script. Includila in cima a <head>. -#}
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{ meta.title }}</title>
+<meta name="description" content="{{ meta.description or site.description or site.site_name }}">
+{% if meta.noindex %}<meta name="robots" content="noindex, follow">
+{% else %}<link rel="canonical" href="{{ canonical }}">
+<meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">{% endif %}
+<meta property="og:site_name" content="{{ site.site_name }}">
+<meta property="og:type" content="{{ meta.og_type }}">
+<meta property="og:title" content="{{ meta.og_title or meta.title }}">
+<meta property="og:description" content="{{ meta.description or site.description or site.site_name }}">
+<meta property="og:url" content="{{ canonical }}">
+{% if meta.image %}<meta property="og:image" content="{{ meta.image }}">{% endif %}
+{% if meta.published %}<meta property="article:published_time" content="{{ meta.published }}">
+<meta property="article:modified_time" content="{{ meta.modified }}">{% endif %}
+{% if meta.section %}<meta property="article:section" content="{{ meta.section }}">{% endif %}
+<meta name="twitter:card" content="summary_large_image">
+{% if site.favicon %}<link rel="icon" href="{{ site.favicon }}"><link rel="apple-touch-icon" href="{{ site.favicon }}">
+{%- else %}{#- icona provvisoria con l'iniziale del sito: evita la richiesta a /favicon.ico, che darebbe un errore 404 -#}
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='{{ (site.accent or '#c8102e')|replace('#', '%23') }}'/%3E%3Ctext x='32' y='45' font-size='38' font-family='Georgia,serif' font-weight='700' text-anchor='middle' fill='white'%3E{{ (site.site_name or 'P')[:1]|upper|urlencode }}%3C/text%3E%3C/svg%3E">{% endif %}
+<meta name="theme-color" content="{{ site.accent or '#c8102e' }}">
+<link rel="alternate" type="application/rss+xml" title="{{ site.site_name }}" href="{{ site.base_url }}/feed.xml">
+{% if prev_url %}<link rel="prev" href="{{ prev_url }}">{% endif %}{% if next_url %}<link rel="next" href="{{ next_url }}">{% endif %}
+{{ jsonld }}
+{% if site.mode_toggle == "on" %}<script>try{var m=localStorage.getItem('ps-mode');if(m==='light'||m==='dark')document.documentElement.dataset.mode=m}catch(e){}</script>
+{% endif %}{% if site.consent_mode and site.consent_gcm != "" %}<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag('consent','default',{ad_storage:'denied',ad_user_data:'denied',ad_personalization:'denied',analytics_storage:'denied',functionality_storage:'granted',security_storage:'granted',wait_for_update:500});gtag('set','ads_data_redaction',true);{% if site.consent_mode == "native" %}try{var c=JSON.parse(localStorage.getItem('ps-consent')||'null');if(c&&c.v===1&&Date.now()-c.t<15724800000)gtag('consent','update',{analytics_storage:c.stats?'granted':'denied',ad_storage:c.ads?'granted':'denied',ad_user_data:c.ads?'granted':'denied',ad_personalization:c.ads?'granted':'denied'})}catch(e){}{% endif %}</script>
+{% endif %}{% if site.consent_mode == "external" and site.consent_cmp %}{{ site.consent_cmp|safe }}
+{% endif %}{{ site.head_scripts|safe }}
+{{ site.ad_head|safe }}

@@ -1,0 +1,138 @@
+{% extends "admin/base.html" %}
+{% block title %}Impostazioni | Presstatic{% endblock %}
+{% block main %}
+{% import "admin/icons.html" as ic %}
+<header class="page-head">
+  <div><h1>Impostazioni</h1><p class="sub">Quando salvi, Presstatic aggiorna subito tutte le pagine del sito e svuota la cache di Cloudflare.</p></div>
+</header>
+<nav class="anchors" aria-label="Sezioni delle impostazioni">
+  <a href="#sito">{{ ic.i("globo", 16) }}Sito</a><a href="#piede">{{ ic.i("piede", 16) }}Piè di pagina</a><a href="#script">{{ ic.i("codice", 16) }}Script e tracciamento</a>
+  <a href="#pubblicita">{{ ic.i("annunci", 16) }}Pubblicità</a><a href="#cloudflare">{{ ic.i("nuvola", 16) }}Cloudflare</a><a href="#azioni">{{ ic.i("aggiornamenti", 16) }}Azioni</a>
+</nav>
+<form method="post" action="/admin/settings" enctype="multipart/form-data" class="grid">
+<input type="hidden" name="sv" value="{{ sv }}">
+<div>
+  <div class="panel" id="sito">
+    <h2><span class="hic">{{ ic.i("globo") }}</span>Sito</h2>
+    <label>Nome del sito<input name="site_name" value="{{ s.site_name }}" required></label>
+    <label>Indirizzo del sito<small>Con https e senza barra finale, per esempio https://www.miosito.it</small><input name="base_url" value="{{ s.base_url }}" required></label>
+    <label>Descrizione<small>Compare sotto la testata o a piè di pagina, a seconda del tema, e su Google per la home.</small><textarea name="description" rows="2">{{ s.description }}</textarea></label>
+    <label>Menu<small>Una voce per riga. Il nome di una categoria porta alla categoria; per un indirizzo qualsiasi scrivi «Contatti | /contatti/».</small><textarea name="menu" rows="5" placeholder="Cronaca&#10;Politica&#10;Sport">{{ s.menu }}</textarea></label>
+    <div class="row" style="align-items:flex-start">
+      <label style="flex:1;min-width:120px">Lingua<input name="lang" value="{{ s.lang }}" maxlength="10"></label>
+      <label style="flex:2;min-width:180px">Fuso orario<input name="timezone" value="{{ s.timezone }}" placeholder="Europe/Rome"></label>
+      <label style="flex:1;min-width:140px">Articoli per pagina<input name="per_page" value="{{ s.per_page }}" inputmode="numeric"></label>
+    </div>
+  </div>
+  <div class="panel" id="piede">
+    <h2><span class="hic">{{ ic.i("piede") }}</span>Piè di pagina</h2>
+    <label>Colonne di link<small>Una riga che inizia con # apre una colonna e ne è il titolo. Sotto, un link per riga: «Chi siamo | /chi-siamo/» oppure il nome di una categoria.</small><textarea name="footer_columns" rows="8" placeholder="# Il giornale&#10;Chi siamo | /chi-siamo/&#10;# Sezioni&#10;Cronaca">{{ s.footer_columns }}</textarea></label>
+    <label>Profili social<small>Un indirizzo per riga: il nome del social si riconosce da solo. Finiscono anche nei dati strutturati per Google.</small><textarea name="social" rows="4" placeholder="https://www.facebook.com/nomepagina&#10;https://www.instagram.com/nomeprofilo">{{ s.social }}</textarea></label>
+    <label>Note legali<small>Una informazione per riga: testata registrata, editore, partita IVA, direttore responsabile.</small><textarea name="footer" rows="4" placeholder="Testata registrata presso il Tribunale di …, n. … del …&#10;Direttore responsabile: …&#10;Editore: … P.IVA …">{{ s.footer }}</textarea></label>
+  </div>
+  <div class="panel" id="script">
+    <h2><span class="hic">{{ ic.i("codice") }}</span>Script e tracciamento</h2>
+    <label>Nell'intestazione, dentro &lt;head&gt;<small>Google Analytics, Tag Manager, Meta Pixel, Clarity, verifiche dei motori di ricerca. Con il consenso attivo (riquadro «Cookie e consenso») partono solo dopo il sì del lettore.</small><textarea name="head_scripts" rows="5" spellcheck="false">{{ s.head_scripts }}</textarea></label>
+    <label>All'inizio della pagina, subito dopo &lt;body&gt;<small>La parte &lt;noscript&gt; di Tag Manager o del Meta Pixel.</small><textarea name="body_scripts" rows="3" spellcheck="false">{{ s.body_scripts }}</textarea></label>
+  </div>
+  <div class="panel" id="consenso">
+    <h2><span class="hic">{{ ic.i("scudo") }}</span>Cookie e consenso</h2>
+    <p class="panel-lead">In Europa gli script che tracciano (statistiche, pixel, pubblicità) possono partire solo dopo il consenso del lettore. Il banner di Presstatic lo fa senza servizi esterni; se usi la pubblicità di Google (AdSense, Ad Manager) serve invece una piattaforma certificata da Google, come iubenda o Cookiebot.</p>
+    <label>Come raccogliere il consenso<select name="consent_mode">
+      <option value=""{% if not s.consent_mode %} selected{% endif %}>Nessun banner: i codici esterni partono subito</option>
+      <option value="native"{% if s.consent_mode == "native" %} selected{% endif %}>Banner di Presstatic, senza servizi esterni</option>
+      <option value="external"{% if s.consent_mode == "external" %} selected{% endif %}>Piattaforma esterna (iubenda, Cookiebot o altre)</option></select></label>
+    <label class="choice"><input type="checkbox" name="consent_gcm" value="on"{% if s.consent_gcm != "" %} checked{% endif %}><span><strong>Google Consent Mode v2</strong><small>Per Google il consenso parte «negato» e si aggiorna con la scelta del lettore: lo richiedono Google Analytics e Google Ads in Europa.</small></span></label>
+    <div class="row">
+      <label>Gli script dell'intestazione sono<select name="consent_head_cat"><option value="stats">Statistiche</option><option value="ads"{% if s.consent_head_cat == "ads" %} selected{% endif %}>Pubblicità e profilazione</option></select></label>
+      <label>Gli script di inizio pagina sono<select name="consent_body_cat"><option value="stats">Statistiche</option><option value="ads"{% if s.consent_body_cat == "ads" %} selected{% endif %}>Pubblicità e profilazione</option></select></label>
+    </div>
+    <label>Testo del banner<small>Facoltativo: vuoto usa un testo pronto. I codici pubblicitari contano sempre come «Pubblicità e profilazione».</small><textarea name="consent_text" rows="2">{{ s.consent_text }}</textarea></label>
+    <label>Indirizzo della cookie policy<input name="consent_policy" value="{{ s.consent_policy }}" placeholder="https://…/cookie-policy/"></label>
+    <label>Script della piattaforma esterna<small>Quello che ti dà iubenda, Cookiebot o simili: va per primo nella pagina. Attiva nella piattaforma il blocco automatico degli script.</small><textarea name="consent_cmp" rows="4" spellcheck="false">{{ s.consent_cmp }}</textarea></label>
+  </div>
+  <div class="panel" id="condivisione">
+    <h2><span class="hic">{{ ic.i("esterno") }}</span>Condivisione</h2>
+    <p class="panel-lead">I pulsanti sotto ogni articolo per condividerlo. Sono semplici link (niente script dei social, niente tracciamento): la pagina resta veloce e i lettori non vengono seguiti.</p>
+    {% set nets = (s.share_nets or "whatsapp,facebook,x,telegram,copy")|split(",") %}
+    <input type="hidden" name="share_nets" id="sharenets" value="{{ s.share_nets or "whatsapp,facebook,x,telegram,copy" }}">
+    <div class="share-opts" id="shareopts"><label class="mchk share-opt"><input type="checkbox" value="whatsapp"{% if "whatsapp" in nets %} checked{% endif %}><span class="sw" style="background:#25D366"></span>WhatsApp</label><label class="mchk share-opt"><input type="checkbox" value="facebook"{% if "facebook" in nets %} checked{% endif %}><span class="sw" style="background:#0866FF"></span>Facebook</label><label class="mchk share-opt"><input type="checkbox" value="x"{% if "x" in nets %} checked{% endif %}><span class="sw" style="background:#000000"></span>X</label><label class="mchk share-opt"><input type="checkbox" value="telegram"{% if "telegram" in nets %} checked{% endif %}><span class="sw" style="background:#26A5E4"></span>Telegram</label><label class="mchk share-opt"><input type="checkbox" value="linkedin"{% if "linkedin" in nets %} checked{% endif %}><span class="sw" style="background:#0A66C2"></span>LinkedIn</label><label class="mchk share-opt"><input type="checkbox" value="email"{% if "email" in nets %} checked{% endif %}><span class="sw" style="background:#4B5563"></span>Email</label><label class="mchk share-opt"><input type="checkbox" value="threads"{% if "threads" in nets %} checked{% endif %}><span class="sw" style="background:#000000"></span>Threads</label><label class="mchk share-opt"><input type="checkbox" value="bluesky"{% if "bluesky" in nets %} checked{% endif %}><span class="sw" style="background:#0085FF"></span>Bluesky</label><label class="mchk share-opt"><input type="checkbox" value="reddit"{% if "reddit" in nets %} checked{% endif %}><span class="sw" style="background:#FF4500"></span>Reddit</label><label class="mchk share-opt"><input type="checkbox" value="copy"{% if "copy" in nets %} checked{% endif %}><span class="sw" style="background:#64748b"></span>Copia link</label></div>
+    <label>Aspetto<select name="share_style"><option value="brand"{% if s.share_style != "plain" %} selected{% endif %}>Con i colori dei social</option><option value="plain"{% if s.share_style == "plain" %} selected{% endif %}>Sobrio, nei colori del tema</option></select></label>
+    <details><summary><strong>Icone personalizzate</strong> <span class="muted">facoltative: di serie ci sono quelle ufficiali</span></summary>
+      <p class="muted">Le icone ufficiali dei social sono già incluse. Qui puoi sostituirle con un tuo PNG, meglio se quadrato e monocolore, bianco o scuro.</p>
+      <div class="logo-row"><span class="sw" style="background:#25D366"></span><strong>WhatsApp</strong>{% if s.share_logo_whatsapp %}<img src="{{ s.share_logo_whatsapp }}" alt="" width="22" height="22">{% endif %}<input name="share_logo_whatsapp" value="{{ s.share_logo_whatsapp }}" placeholder="Icona ufficiale inclusa" aria-label="Indirizzo del logo di WhatsApp"><input type="file" name="share_logo_whatsapp_file" accept="image/png,image/webp" aria-label="Carica il logo di WhatsApp"></div><div class="logo-row"><span class="sw" style="background:#0866FF"></span><strong>Facebook</strong>{% if s.share_logo_facebook %}<img src="{{ s.share_logo_facebook }}" alt="" width="22" height="22">{% endif %}<input name="share_logo_facebook" value="{{ s.share_logo_facebook }}" placeholder="Icona ufficiale inclusa" aria-label="Indirizzo del logo di Facebook"><input type="file" name="share_logo_facebook_file" accept="image/png,image/webp" aria-label="Carica il logo di Facebook"></div><div class="logo-row"><span class="sw" style="background:#000000"></span><strong>X</strong>{% if s.share_logo_x %}<img src="{{ s.share_logo_x }}" alt="" width="22" height="22">{% endif %}<input name="share_logo_x" value="{{ s.share_logo_x }}" placeholder="Icona ufficiale inclusa" aria-label="Indirizzo del logo di X"><input type="file" name="share_logo_x_file" accept="image/png,image/webp" aria-label="Carica il logo di X"></div><div class="logo-row"><span class="sw" style="background:#26A5E4"></span><strong>Telegram</strong>{% if s.share_logo_telegram %}<img src="{{ s.share_logo_telegram }}" alt="" width="22" height="22">{% endif %}<input name="share_logo_telegram" value="{{ s.share_logo_telegram }}" placeholder="Icona ufficiale inclusa" aria-label="Indirizzo del logo di Telegram"><input type="file" name="share_logo_telegram_file" accept="image/png,image/webp" aria-label="Carica il logo di Telegram"></div><div class="logo-row"><span class="sw" style="background:#0A66C2"></span><strong>LinkedIn</strong>{% if s.share_logo_linkedin %}<img src="{{ s.share_logo_linkedin }}" alt="" width="22" height="22">{% endif %}<input name="share_logo_linkedin" value="{{ s.share_logo_linkedin }}" placeholder="Icona ufficiale inclusa" aria-label="Indirizzo del logo di LinkedIn"><input type="file" name="share_logo_linkedin_file" accept="image/png,image/webp" aria-label="Carica il logo di LinkedIn"></div>
+    </details>
+  </div>
+  <style>.share-opts{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 14px}.share-opt{border:1px solid var(--line);border-radius:999px;padding:6px 12px}.sw{display:inline-block;width:14px;height:14px;border-radius:50%;flex:none}.logo-row{display:grid;grid-template-columns:14px 90px 26px 1fr auto;gap:10px;align-items:center;margin:8px 0}.logo-row input{margin:0}.logo-row img{border-radius:4px}@media (max-width:700px){.logo-row{grid-template-columns:14px 1fr;}}</style>
+  <script nonce="{{ csp_nonce }}">(() => { const box = document.getElementById('shareopts'), h = document.getElementById('sharenets'); box.addEventListener('change', () => { h.value = [...box.querySelectorAll('input:checked')].map(x => x.value).join(','); }); })();</script>
+  <div class="panel" id="commenti">
+    <h2><span class="hic">{{ ic.i("documento") }}</span>Commenti</h2>
+    <p class="panel-lead">Spenti, le pagine non hanno un byte in più. Accesi, i commenti approvati sono scritti dentro la pagina dell'articolo (niente JavaScript, niente servizi esterni) e il modulo è HTML semplice: PageSpeed non cambia. Ogni commento aspetta l'approvazione della redazione.</p>
+    <label class="choice"><input type="checkbox" name="comments_on"{% if s.comments_on == "on" %} checked{% endif %}><span><strong>Commenti attivi</strong><small>Si possono chiudere su un singolo articolo dall'editor.</small></span></label>
+    <div class="row" style="align-items:flex-start">
+      <label style="flex:1;min-width:200px">Chiudi i commenti dopo<small>Giorni dalla pubblicazione. 0 = mai.</small><input name="comments_close_days" value="{{ s.comments_close_days or "0" }}" inputmode="numeric"></label>
+      <label style="flex:2;min-width:240px">Avvisa di un nuovo commento<small>Email che riceve un messaggio per ogni commento da approvare (serve l'invio delle email in Integrazioni).</small><input type="email" name="comments_notify" value="{{ s.comments_notify }}" placeholder="redazione@miosito.it"></label>
+    </div>
+    <details><summary><strong>Come funziona</strong> <span class="muted">e come si ferma lo spam</span></summary>
+      <ol class="steps">
+        <li>Il lettore scrive nome, email (non pubblicata) e commento, e accetta l'informativa privacy. Il commento arriva al pannello e aspetta in <strong>Commenti</strong>.</li>
+        <li>Quando lo approvi, la pagina dell'articolo si rigenera con il commento dentro. Puoi rispondere come redazione: la risposta compare subito, con l'etichetta «Redazione».</li>
+        <li>Antispam senza servizi esterni: un campo nascosto che solo i programmi di spam riempiono, al massimo 5 commenti ogni 10 minuti dalla stessa connessione, commenti con più di due link o doppi direttamente tra lo spam. L'indirizzo IP non viene salvato, solo una sua impronta.</li>
+      </ol>
+    </details>
+  </div>
+  <div class="panel" id="pubblicita">
+    <h2><span class="hic">{{ ic.i("annunci") }}</span>Pubblicità</h2>
+    <label>Script delle reti pubblicitarie<small>AdSense, Google Ad Manager e simili: va in ogni pagina, nell'intestazione.</small><textarea name="ad_head" rows="3" spellcheck="false">{{ s.ad_head }}</textarea></label>
+    <label>Annuncio sotto il titolo<textarea name="ad_top" rows="3" spellcheck="false">{{ s.ad_top }}</textarea></label>
+    <label>Annuncio dentro l'articolo<textarea name="ad_inarticle" rows="3" spellcheck="false">{{ s.ad_inarticle }}</textarea></label>
+    <div class="row" style="align-items:center;margin:-4px 0 18px">
+      <label style="margin:0">Dopo il paragrafo numero<input name="ad_paragraph" value="{{ s.ad_paragraph }}" inputmode="numeric" style="width:6rem"></label>
+      <label class="choice" style="margin:22px 0 0;flex:1;min-width:240px"><input type="checkbox" name="ad_repeat"{% if s.ad_repeat == "on" %} checked{% endif %}><span>Ripeti ogni volta dopo lo stesso numero di paragrafi</span></label>
+    </div>
+    <label>Annuncio a fine articolo<textarea name="ad_bottom" rows="3" spellcheck="false">{{ s.ad_bottom }}</textarea></label>
+    <label>Contenuto di ads.txt<small>Una riga per ogni rete pubblicitaria, come te le fornisce la rete.</small><textarea name="ads_txt" rows="3" spellcheck="false">{{ s.ads_txt }}</textarea></label>
+    <label>Tra le notizie, in home e nelle categorie<small>Un annuncio ogni tot sezioni della home e, nelle categorie, dopo ogni tot righe di articoli. Anche nel page builder, con il widget «Pubblicità».</small><textarea name="ad_list" rows="3" spellcheck="false">{{ s.ad_list }}</textarea></label>
+    <label>Ogni quante sezioni<input type="number" name="ad_list_every" min="1" max="10" value="{{ s.ad_list_every or 2 }}"></label>
+    <label>Annuncio fisso in basso<small>Sempre visibile in fondo allo schermo, soprattutto sul telefono; il lettore lo può chiudere.</small><textarea name="ad_sticky" rows="3" spellcheck="false">{{ s.ad_sticky }}</textarea></label>
+  </div>
+  <div class="panel" id="cloudflare">
+    <h2><span class="hic">{{ ic.i("nuvola") }}</span>Cloudflare</h2>
+    <p class="panel-lead">Con Zone ID e token, Presstatic mette in cache anche l'HTML e svuota le pagine cambiate a ogni pubblicazione.</p>
+    <label>Zone ID<small>Nella dashboard di Cloudflare, pagina Panoramica del dominio, colonna a destra.</small><input name="cf_zone" value="{{ s.cf_zone }}" autocomplete="off" spellcheck="false"></label>
+    <label>Token API<small>{% if has_token %}Un token è già salvato: lascia vuoto per mantenerlo.{% else %}Serve un token con i permessi Cache Rules, Zone Settings e Cache Purge.{% endif %}</small><input type="password" name="cf_token"{% if has_token %} placeholder="••••••••••••••••••••" class="secret-saved"{% endif %} autocomplete="new-password"></label>
+  </div>
+</div>
+<div class="side">
+  <div class="panel sticky">
+    <button class="btn wide">{{ ic.i("spunta", 18) }}Salva e aggiorna il sito</button>
+  </div>
+  <div class="panel">
+    <h2><span class="hic">{{ ic.i("tema") }}</span>Tema</h2>
+    {% for id, label in themes %}<label class="choice"><input type="radio" name="theme" value="{{ id }}"{% if (s.theme or "classico") == id %} checked{% endif %}><span>{{ label }}</span></label>{% endfor %}
+    <label class="choice" style="margin-top:16px"><input type="checkbox" name="related"{% if s.related != "off" and s.related != "" %} checked{% endif %}><span><strong>Articoli correlati</strong><small>Tre articoli della stessa categoria in fondo a ogni articolo. Toglierli rende più veloce la pubblicazione su archivi molto grandi.</small></span></label>
+    <label class="choice"><input type="checkbox" name="links_on"{% if s.links_on != "" %} checked{% endif %}><span><strong>Link interni automatici</strong><small>Le parole chiave indicate negli articoli diventano link negli altri articoli. Al massimo <input name="links_max" value="{{ s.links_max or 3 }}" inputmode="numeric" class="inline-num"> link per articolo.</small></span></label>
+    <label style="margin:16px 0 0">Colore principale<input type="color" name="accent" value="{{ s.accent or '#c8102e' }}"></label>
+  </div>
+  <div class="panel">
+    <h2><span class="hic">{{ ic.i("immagine") }}</span>Logo e icona</h2>
+    {% if s.logo %}<div class="logo-prev"><img src="{{ s.logo }}" alt=""></div>{% endif %}
+    <label>Logo<small>Se c'è, prende il posto del nome nella testata. Serve anche a Google.</small><input type="file" name="logo_upload" accept="image/png,image/webp,image/jpeg"><input name="logo" value="{{ s.logo }}" placeholder="oppure l'indirizzo dell'immagine"></label>
+    {% if s.favicon %}<img src="{{ s.favicon }}" alt="" style="width:40px;height:40px;border-radius:10px;margin:0 0 10px;box-shadow:var(--shadow-sm)">{% endif %}
+    <label>Icona del sito<small>Quadrata, almeno 512 pixel, PNG.</small><input type="file" name="favicon_upload" accept="image/png"><input name="favicon" value="{{ s.favicon }}" placeholder="oppure l'indirizzo dell'immagine"></label>
+  </div>
+</div>
+</form>
+<div class="panel" id="azioni">
+  <h2><span class="hic">{{ ic.i("aggiornamenti") }}</span>Azioni</h2>
+  <div class="acts">
+    <div class="act"><div><strong>Configura Cloudflare</strong><p class="muted">Attiva il Tiered Cache e mette in cache l'HTML del sito.</p></div><form method="post" action="/admin/cloudflare"><button class="btn ghost">{{ ic.i("nuvola", 18) }}Configura Cloudflare</button></form></div>
+    <div class="act"><div><strong>Rigenera il sito</strong><p class="muted">Ricrea tutte le pagine: serve dopo aver modificato i file di un tema personalizzato.</p></div><form method="post" action="/admin/rebuild"><button class="btn ghost">{{ ic.i("aggiornamenti", 18) }}Rigenera il sito</button></form></div>
+  </div>
+</div>
+<style>.inline-num{display:inline;width:3.4rem;padding:2px 6px;margin:0 2px;border-radius:7px;font-size:13px}
+.logo-prev{padding:14px;margin:0 0 12px;border-radius:12px;background:repeating-conic-gradient(#f1f4fa 0 25%,#fff 0 50%) 0 0/16px 16px;border:1px solid var(--line)}.logo-prev img{display:block;max-height:3rem}
+.acts{display:grid;grid-template-columns:1fr 1fr;gap:14px}.act{display:flex;flex-direction:column;justify-content:space-between;gap:12px;padding:16px;border:1px solid var(--line);border-radius:14px;background:#fafbfe}.act strong{color:var(--ink)}.act p{margin:4px 0 0}
+@media (max-width:760px){.acts{grid-template-columns:1fr}}
+.panel[id]{scroll-margin-top:24px}</style>
+{% endblock %}

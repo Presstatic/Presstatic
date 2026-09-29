@@ -1,0 +1,73 @@
+{% extends "admin/base.html" %}
+{% block title %}Newsletter | Presstatic{% endblock %}
+{% block main %}
+{% import "admin/icons.html" as ic %}
+<header class="page-head">
+  <div><h1>Newsletter</h1><p class="sub">I lettori si iscrivono dal modulo in fondo agli articoli e confermano dal link nell'email (doppia conferma). Ricevono il riepilogo dei nuovi articoli ogni giorno o ogni settimana; in ogni email c'è l'annullamento dell'iscrizione con un clic.</p></div>
+  <div class="actions"><a class="btn ghost" href="/admin/newsletter/iscritti.csv">{{ ic.i("documento", 18) }}Esporta gli iscritti</a></div>
+</header>
+{% if not mail_on %}<p class="msg info">Prima serve l'invio delle email: configuralo in <a href="/admin/integrations#email">Integrazioni, sezione Email</a>. Per liste grandi conviene un servizio fatto per gli invii (Brevo, Mailgun, Amazon SES).</p>{% endif %}
+<div class="nl-stats">
+  <div class="panel"><span>Iscritti confermati</span><strong>{{ counts.confirmed or 0 }}</strong></div>
+  <div class="panel"><span>In attesa di conferma</span><strong>{{ counts.pending or 0 }}</strong></div>
+  <div class="panel"><span>Hanno annullato</span><strong>{{ counts.unsubscribed or 0 }}</strong></div>
+</div>
+<div class="grid">
+  <div>
+    <form method="post" action="/admin/newsletter" class="panel">
+      <input type="hidden" name="sv" value="{{ sv }}">
+      <h2><span class="hic">{{ ic.i("posta") }}</span>Impostazioni</h2>
+      <label class="choice"><input type="checkbox" name="newsletter_on"{% if s.newsletter_on == "on" %} checked{% endif %}><span><strong>Newsletter attiva</strong><small>Mostra il modulo di iscrizione in fondo agli articoli. Spenta, le pagine non hanno un byte in più.</small></span></label>
+      <label>Titolo<small>Compare sopra il modulo e nell'oggetto delle email.</small><input name="newsletter_title" value="{{ s.newsletter_title }}" maxlength="80" placeholder="La newsletter di {{ s.site_name }}"></label>
+      <label>Invito<small>Una frase che spiega cosa si riceve.</small><input name="newsletter_pitch" value="{{ s.newsletter_pitch }}" maxlength="200" placeholder="Le notizie più importanti, direttamente nella tua casella. Gratis, ti cancelli quando vuoi."></label>
+      <div class="row" style="align-items:flex-start">
+        <label style="flex:1;min-width:200px">Invio automatico<select name="newsletter_every">{% for id, label in [("daily", "Ogni giorno"), ("weekly", "Ogni settimana (lunedì)"), ("off", "Solo a mano")] %}<option value="{{ id }}"{% if (s.newsletter_every or "daily") == id %} selected{% endif %}>{{ label }}</option>{% endfor %}</select></label>
+        <label style="flex:1;min-width:140px">Alle ore<select name="newsletter_hour">{% for h in range(5, 23) %}<option value="{{ h }}"{% if (s.newsletter_hour or "7")|int == h %} selected{% endif %}>{{ h }}:00</option>{% endfor %}</select></label>
+      </div>
+      <p class="muted" style="margin:0 0 14px">Parte solo se dall'ultimo invio sono usciti articoli nuovi (al massimo 15 per email).</p>
+      <button class="btn">{{ ic.i("spunta", 18) }}Salva</button>
+    </form>
+    <div class="panel">
+      <h2><span class="hic">{{ ic.i("utenti") }}</span>Iscritti</h2>
+      <form method="get" action="/admin/newsletter" class="search" role="search" style="margin:0 0 12px"><input type="search" name="q" value="{{ q or '' }}" placeholder="Cerca un indirizzo" aria-label="Cerca un indirizzo"><button class="btn ghost">Cerca</button></form>
+      {% if subs %}<table class="list"><thead><tr><th>Email</th><th>Stato</th><th>Dal</th><th></th></tr></thead><tbody>
+      {% for x in subs %}<tr><td>{{ x.email }}</td><td><span class="state {{ "Pubblicato" if x.status == "confirmed" else ("In-revisione" if x.status == "pending" else "Bozza") }}">{{ {"confirmed": "Confermato", "pending": "In attesa", "unsubscribed": "Annullato"}[x.status] }}</span></td><td class="date">{{ x.date }}</td>
+        <td><form method="post" action="/admin/newsletter/rimuovi" data-confirm="Eliminare {{ x.email }} dalla lista?"><input type="hidden" name="id" value="{{ x.id }}"><button class="btn ghost small">Elimina</button></form></td></tr>{% endfor %}
+      </tbody></table>{% else %}<p class="muted">Nessun iscritto{% if q %} con «{{ q }}»{% endif %}.</p>{% endif %}
+    </div>
+  </div>
+  <div class="side">
+    <div class="panel sticky">
+      <h2><span class="hic">{{ ic.i("carica") }}</span>Invia adesso</h2>
+      <p class="muted">Manda subito agli iscritti confermati il riepilogo degli articoli usciti dall'ultimo invio.</p>
+      <form method="post" action="/admin/newsletter/invia"><button class="btn wide"{% if not mail_on or s.newsletter_on != "on" %} disabled{% endif %}>{{ ic.i("posta", 18) }}Invia la newsletter</button></form>
+      <div id="nlprog"{% if not sending.running and not sending.last %} hidden{% endif %} style="margin-top:14px">
+        <div class="bar-out"><div class="bar-in" id="nlbar"></div></div>
+        <p class="muted" id="nltxt">{{ sending.last }}</p>
+      </div>
+    </div>
+    {% if sends %}<div class="panel">
+      <h2><span class="hic">{{ ic.i("cronologia") }}</span>Ultimi invii</h2>
+      <ul class="revs">{% for x in sends %}<li><strong style="display:block">{{ x.subject }}</strong><span>{{ x.date }} · {{ x.sent }} inviate · {{ x.posts }} articoli{% if x.failed %} · {{ x.failed }} non riuscite{% endif %}</span></li>{% endfor %}</ul>
+    </div>{% endif %}
+  </div>
+</div>
+<style>
+.nl-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin:0 0 18px}
+.nl-stats .panel{margin:0;padding:16px 18px}.nl-stats span{display:block;font-size:13px;font-weight:700;color:var(--muted)}.nl-stats strong{font-size:28px;color:var(--ink)}
+.bar-out{height:10px;border-radius:999px;background:#eef2fa;overflow:hidden;margin:0 0 8px}.bar-in{height:100%;width:0;background:var(--grad);transition:width .4s ease}
+@media (max-width:640px){.nl-stats{grid-template-columns:1fr}}
+</style>
+<script nonce="{{ csp_nonce }}">
+(() => {
+  const box = document.getElementById('nlprog'); if (box.hidden) return;
+  async function tick() {
+    const s = await (await fetch('/admin/newsletter/stato')).json();
+    document.getElementById('nlbar').style.width = (s.total ? Math.round(100 * (s.sent + s.failed) / s.total) : 100) + '%';
+    document.getElementById('nltxt').textContent = s.running ? 'Inviate ' + s.sent + ' di ' + s.total + (s.failed ? ' (' + s.failed + ' non riuscite)' : '') + '…' : s.last;
+    if (s.running) setTimeout(tick, 1000);
+  }
+  tick();
+})();
+</script>
+{% endblock %}

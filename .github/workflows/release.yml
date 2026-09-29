@@ -1,0 +1,52 @@
+# Presstatic: a ogni tag vX.Y.Z compila il programma per x86_64 e per ARM64 (aarch64) su macchine Ubuntu 22.04 vere
+# (glibc più vecchia = il programma parte su più distribuzioni), prepara l'archivio del codice sorgente e, se tra i
+# segreti del repository c'è la chiave di firma (PRESSTATIC_SIGNING_KEY, il file firma.key in base64), firma tutto.
+# Le macchine ARM gratuite di GitHub (ubuntu-22.04-arm) sono disponibili per i repository pubblici.
+name: release
+on:
+  push:
+    tags: ["v*.*.*"]
+permissions:
+  contents: write
+jobs:
+  build:
+    strategy:
+      matrix:
+        include:
+          - { os: ubuntu-22.04, arch: x86_64 }
+          - { os: ubuntu-22.04-arm, arch: aarch64 }
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - run: cargo build --release --locked
+      - run: cp target/release/presstatic presstatic-linux-${{ matrix.arch }}
+      - uses: actions/upload-artifact@v4
+        with: { name: presstatic-linux-${{ matrix.arch }}, path: presstatic-linux-${{ matrix.arch }} }
+  release:
+    needs: build
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with: { merge-multiple: true }
+      - name: Codice sorgente (per i processori senza programma pronto)
+        run: git archive --format=tar.gz --prefix=presstatic/ -o presstatic-src.tar.gz HEAD
+      - name: Firma
+        env: { KEY: "${{ secrets.PRESSTATIC_SIGNING_KEY }}" }
+        run: |
+          chmod +x presstatic-linux-x86_64
+          if [ -n "$KEY" ]; then
+            echo "$KEY" | base64 -d > firma.key
+            for f in presstatic-linux-x86_64 presstatic-linux-aarch64 presstatic-src.tar.gz; do ./presstatic-linux-x86_64 sign "$f" firma.key; done
+            rm -f firma.key
+          else
+            echo "Nessuna chiave tra i segreti: firma i file sul tuo computer con «presstatic sign» e caricali nella release."
+          fi
+      - uses: softprops/action-gh-release@v2
+        with:
+          draft: true
+          files: |
+            presstatic-linux-x86_64*
+            presstatic-linux-aarch64*
+            presstatic-src.tar.gz*

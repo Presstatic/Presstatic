@@ -1,0 +1,52 @@
+{% extends "admin/base.html" %}
+{% block title %}{{ user.name or "Nuovo utente" }} | Presstatic{% endblock %}
+{% block main %}
+{% import "admin/icons.html" as ic %}
+{% set own = user.id == me.id %}
+<header class="page-head">
+  <div>
+    {% if me.role == "admin" and not own %}<a class="back" href="/admin/users">{{ ic.i("indietro", 16) }}Utenti</a>{% endif %}
+    <h1>{{ "Il mio profilo" if own else (user.name or "Nuovo utente") }}</h1>
+    <p class="sub">{{ "Nome, foto e biografia compaiono nella firma degli articoli e nella pagina autore." if user.id else "Il nuovo utente riceve l'accesso con l'email e la password che scegli qui." }}</p>
+  </div>
+</header>
+<form method="post" action="/admin/users/{{ user.id }}" enctype="multipart/form-data" class="grid">
+<input type="hidden" name="uv" value="{{ uv }}">
+  <div class="panel">
+    <h2><span class="hic">{{ ic.i("profilo") }}</span>Dati personali</h2>
+    <label>Nome e cognome<small>Compare come firma degli articoli.</small><input name="name" value="{{ user.name }}" required></label>
+    <label>Email<small>Serve per accedere al pannello.</small><input type="email" name="email" value="{{ user.email }}" required autocomplete="off"></label>
+    <label>Biografia<small>Due o tre frasi: chi sei, di cosa scrivi, la tua esperienza. Compare sotto gli articoli e nella pagina autore, e aiuta Google a capire chi firma.</small><textarea name="bio" rows="4">{{ user.bio }}</textarea></label>
+    <h2 style="margin-top:26px"><span class="hic">{{ ic.i("lucchetto") }}</span>Password</h2>
+    {% if user.id and own %}<label>Password attuale<small>Serve solo se cambi la password.</small><input type="password" name="current_password" autocomplete="current-password"></label>{% endif %}
+    <label>{{ "Password" if not user.id else "Nuova password" }}<small>{{ "Almeno 12 caratteri." if not user.id else "Lascia vuoto per non cambiarla." }}</small><input type="password" name="password" autocomplete="new-password"{% if not user.id %} required minlength="12"{% endif %}></label>
+  </div>
+  <div class="side">
+    <div class="panel">
+      <button class="btn wide">{{ ic.i("spunta", 18) }}{{ "Crea utente" if not user.id else "Salva il profilo" }}</button>
+      {% if url %}<p class="muted" style="margin:14px 0 0"><a href="{{ url }}" target="_blank" rel="noopener">Pagina autore sul sito</a> (compare dopo il primo articolo pubblicato)</p>{% endif %}
+    </div>
+    <div class="panel">
+      <h2><span class="hic">{{ ic.i("immagine") }}</span>Foto</h2>
+      <div class="photo">{% if user.photo %}<img src="{{ user.photo }}" alt="">{% else %}<span>{{ (user.name or "?")[:1]|upper }}</span>{% endif %}</div>
+      <label>Carica una foto<small>Viene ritagliata quadrata, 400 pixel.</small><input type="file" name="photo" accept="image/jpeg,image/png,image/webp"></label>
+    </div>
+    {% if user.id %}<div class="panel">
+      <h2><span class="hic">{{ ic.i("lucchetto") }}</span>Verifica in due passaggi</h2>
+      {% if own %}
+      <p class="muted">{% if twofa %}<span class="state Pubblicato">Attiva</span> Per entrare servono password e codice dell'app.{% else %}<span class="state">Non attiva</span> Aggiungi un codice dal telefono oltre alla password: bastano due minuti.{% endif %}</p>
+      <a class="btn ghost wide" href="/admin/2fa">{{ "Gestisci" if twofa else "Attiva la verifica in due passaggi" }}</a>
+      {% else %}
+      <p class="muted">{% if twofa %}<span class="state Pubblicato">Attiva</span> Se ha perso il telefono e i codici di recupero, puoi toglierla: al prossimo accesso basterà la password.{% else %}<span class="state">Non attiva</span> Può attivarla dal suo profilo.{% endif %}</p>
+      {% endif %}
+    </div>{% endif %}
+    {% if me.role == "admin" %}<div class="panel">
+      <h2><span class="hic">{{ ic.i("scudo") }}</span>Ruolo</h2>
+      {% for id, label in roles %}<label class="choice"><input type="radio" name="role" value="{{ id }}"{% if user.role == id %} checked{% endif %}><span><strong>{{ label }}</strong></span></label>{% endfor %}
+    </div>{% endif %}
+  </div>
+</form>
+{% if user.id and not own and twofa and me.role == "admin" %}<form method="post" action="/admin/users/{{ user.id }}/2fa-reset" class="panel testrow" data-confirm="Togliere la verifica in due passaggi a {{ user.name }}?"><span class="hic">{{ ic.i("lucchetto") }}</span><div><strong>Togli la verifica in due passaggi</strong><span class="muted">Solo se ha perso il telefono e i codici di recupero. Viene anche disconnesso.</span></div><button class="btn danger">Togli la verifica</button></form>{% endif %}
+<style>.testrow{display:flex;align-items:center;gap:14px;flex-wrap:wrap}.testrow div{flex:1;min-width:220px}.testrow strong{display:block;color:var(--ink)}.testrow .muted{display:block}
+.photo{display:grid;place-items:center;width:112px;height:112px;margin:0 0 16px;border-radius:50%;overflow:hidden;background:var(--grad);color:#fff;font-size:40px;font-weight:800;box-shadow:0 0 0 5px #eef3ff}.photo img{width:100%;height:100%;object-fit:cover}</style>
+{% endblock %}

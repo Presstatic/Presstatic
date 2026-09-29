@@ -1,0 +1,22 @@
+{% extends "admin/base.html" %}
+{% block title %}Codice di accesso | Presstatic{% endblock %}
+{% block nav %}{% endblock %}
+{% block main %}
+<div class="auth">
+  <div class="auth-card">
+    <div class="auth-brand">
+      <img src="/admin/assets/logo.webp" alt="Presstatic" width="190" height="49">
+      <div><h2>Ancora un passaggio.</h2></div>
+      <p>La verifica in due passaggi protegge l'account anche se qualcuno scopre la password.</p>
+    </div>
+    <form method="post" action="/admin/login/2fa" class="auth-form">
+      <h1>Codice di accesso</h1>
+      <p class="sub">Apri l'app di autenticazione sul telefono e inserisci il codice di 6 cifre che vedi per questo sito.</p>
+      <label>Codice<input name="code" class="code-in" inputmode="numeric" autocomplete="one-time-code" maxlength="12" required autofocus placeholder="000000"></label>
+      <button class="btn wide">Accedi</button>
+      <p class="muted" style="margin:18px 0 0">Non hai il telefono? Inserisci uno dei <strong>codici di recupero</strong> che hai salvato quando hai attivato la verifica (nella forma <code>abcd-efgh</code>): ognuno vale una volta sola.</p>
+      <p class="auth-link"><a href="/admin/login">Torna all'accesso</a></p>
+    </form>
+  </div>
+</div>
+{% endblock %}

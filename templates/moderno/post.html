@@ -1,0 +1,37 @@
+{% extends "moderno/base.html" %}
+{% block top %}<div class="progress c{{ post.category|tinta }}" aria-hidden="true"></div>{% endblock %}
+{% block main %}
+{% if builder %}{{ builder }}{% else %}
+<article class="story c{{ post.category|tinta }}" data-pagefind-body>
+  <div class="col">
+    {% if diretta == 1 %}<span class="live-badge">In diretta</span>{% endif %}{% if post.category %}<a class="kicker" href="{{ cat_url }}">{{ post.category }}</a>{% endif %}
+    <h1>{{ post.title }}</h1>
+    {% if post.description %}<p class="standfirst">{{ post.description }}</p>{% endif %}
+    <p class="byline">{% if author.photo %}<img class="avatar" src="{{ author.photo }}" alt="" width="40" height="40">{% endif %}{% if author.url %}<a href="{{ author.url }}"><strong>{{ post.author }}</strong></a>{% else %}<strong>{{ post.author }}</strong>{% endif %}{% for c in coauthors %}{{ " e " if loop.last else ", " }}<a href="{{ c.url }}"><strong>{{ c.name }}</strong></a>{% endfor %}<time datetime="{{ date_iso }}" data-ago>{{ date_human }}</time>{% if updated %}<span>Aggiornato {{ updated }}</span>{% endif %}<span>{{ reading }} min di lettura</span></p>
+    {% if site.ad_top %}<div class="ad" data-pagefind-ignore>{{ site.ad_top|safe }}</div>{% endif %}
+  </div>
+  {% if sd.embedUrl %}<div class="hero"><iframe class="video" src="{{ sd.embedUrl }}" title="{{ post.title }}" sandbox="allow-scripts allow-same-origin allow-presentation allow-popups" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe></div>
+  {% elif image %}<figure class="hero" style="margin-left:auto;margin-right:auto"><img {{ image_attrs|safe }} sizes="(min-width: 72rem) 72rem, 100vw" alt="{{ image_meta.alt if image_meta and image_meta.alt else post.title }}" fetchpriority="high" data-pagefind-meta="image[src]">{% if image_meta and (image_meta.caption or image_meta.credit) %}<figcaption class="hero-cap">{{ image_meta.caption }}{% if image_meta.credit %} <span class="credit">Foto: {{ image_meta.credit }}</span>{% endif %}</figcaption>{% endif %}</figure>{% endif %}
+  <div class="col">
+    {% if facts %}<dl class="facts">{% for f in facts %}<dt>{{ f.label }}</dt><dd>
+      {%- if f.items %}{% set tag = "ol" if f.ordered else "ul" %}<{{ tag }}>{% for i in f.items %}<li>{{ i }}</li>{% endfor %}</{{ tag }}>
+      {%- else %}{{ f.text }}{% endif %}</dd>{% endfor %}</dl>{% endif %}
+    <div class="body">{{ body }}</div>
+    {{ live_html }}
+    {% if tags %}<p class="tags" data-pagefind-ignore>{% for t in tags %}<a href="{{ t.url }}">{{ t.name }}</a>{% endfor %}</p>{% endif %}
+    {% if site.ad_bottom %}<div class="ad" data-pagefind-ignore>{{ site.ad_bottom|safe }}</div>{% endif %}
+    {{ share_html }}
+    {% if author.url and (author.bio or author.photo) %}<aside class="author-box" data-pagefind-ignore>
+      {% if author.photo %}<img src="{{ author.photo }}" alt="{{ post.author }}" width="80" height="80" loading="lazy">{% endif %}
+      <div><a href="{{ author.url }}">{{ post.author }}</a>{% if author.bio %}<p>{{ author.bio }}</p>{% endif %}</div>
+    </aside>{% endif %}
+    {{ push_html }}
+    {{ newsletter_html }}
+    {{ comments_html }}
+  </div>
+  {% if related %}<aside class="related" data-pagefind-ignore><header class="sec-head"><h2>Leggi anche</h2></header><div class="cards">
+    {% for r in related %}<article class="teaser card">{% if r.img %}<a class="pic" href="{{ r.url }}" tabindex="-1" aria-hidden="true"><img {{ r.img|safe }} sizes="(min-width: 64rem) 26rem, 100vw" alt="" loading="lazy"></a>{% endif %}<h3><a href="{{ r.url }}">{{ r.title }}</a></h3><p class="meta"><time datetime="{{ r.date_iso }}" data-ago>{{ r.date }}</time></p></article>{% endfor %}
+  </div></aside>{% endif %}
+</article>
+{% endif %}
+{% endblock %}

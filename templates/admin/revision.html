@@ -1,0 +1,29 @@
+{% extends "admin/base.html" %}
+{% block title %}Versione del {{ date }} | Presstatic{% endblock %}
+{% block main %}
+{% import "admin/icons.html" as ic %}
+<header class="page-head">
+  <div>
+    <a class="back" href="/admin/edit/{{ post_id }}">{{ ic.i("indietro", 16) }}{{ post_title }}</a>
+    <h1>Versione del {{ date }}</h1>
+    <p class="sub">Com'era l'articolo in quel momento. Il testo qui sotto non si può modificare.</p>
+  </div>
+</header>
+<div class="grid">
+  <div class="panel paper">
+    <h2 class="paper-title">{{ title }}</h2>
+    {% if description %}<p class="paper-dek">{{ description }}</p>{% endif %}
+    {#- Il testo viene mostrato in una cornice isolata: eventuali script non raggiungono il pannello. -#}
+    <iframe sandbox title="Testo della versione" style="width:100%;height:60vh;border:1px solid var(--line);border-radius:14px;background:#fff" srcdoc="<style>@font-face{font-family:N;src:url(/admin/assets/newsreader.woff2) format('woff2');font-weight:200 800}body{font:19px/1.75 N,Georgia,serif;margin:1.4rem 1.6rem;color:#1d2433}h2,h3{line-height:1.3}img,iframe{max-width:100%;height:auto}</style>{{ body }}"></iframe>
+  </div>
+  <div class="side">
+    <div class="panel">
+      <h2><span class="hic">{{ ic.i("cronologia") }}</span>Questa versione</h2>
+      <dl class="kv"><dt>Salvata da</dt><dd>{{ user or "sconosciuto" }}</dd><dt>Data</dt><dd>{{ date }}</dd></dl>
+      {% if can_restore %}<form method="post" action="/admin/revision/{{ id }}" style="margin-top:18px" data-confirm="Ripristinare questa versione? Titolo, sommario e testo tornano come erano allora."><button class="btn wide">{{ ic.i("cronologia", 18) }}Ripristina questa versione</button></form>
+      <p class="muted" style="margin:12px 0 0">La versione attuale resta nella cronologia: puoi sempre tornare indietro.</p>{% endif %}
+    </div>
+  </div>
+</div>
+<style>.paper{padding:32px 36px}.paper-title{font:700 32px/1.2 var(--serif);letter-spacing:-.01em;word-spacing:0;margin:0 0 10px}.paper-dek{font:400 19px/1.55 var(--serif);word-spacing:0;color:var(--muted);margin:0 0 20px}</style>
+{% endblock %}

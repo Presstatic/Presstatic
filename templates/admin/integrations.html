@@ -1,0 +1,85 @@
+{% extends "admin/base.html" %}
+{% block title %}Integrazioni | Presstatic{% endblock %}
+{% block main %}
+{% import "admin/icons.html" as ic %}
+<header class="page-head">
+  <div><h1>Integrazioni</h1><p class="sub">I servizi esterni che Presstatic usa: Anthropic e OpenAI per scrivere con l'IA, Google Analytics per i più letti, un server SMTP per le email. L'avviso ai motori di ricerca ha una pagina sua: Indicizzazione rapida.</p></div>
+</header>
+<form method="post" action="/admin/integrations" class="grid">
+<input type="hidden" name="sv" value="{{ sv }}">
+<div>
+  <div class="panel" id="ai">
+    <h2><span class="hic ai">{{ ic.i("ia") }}</span>Intelligenza artificiale</h2>
+    <p class="panel-lead">Serve alla funzione «Scrivi con l'IA»: dalle fonti di una notizia prepara una bozza già formattata e ottimizzata per la SEO, e se vuoi anche l'immagine in evidenza. I costi li addebita il fornitore sul tuo account.</p>
+    <label>Chiave API di Anthropic (Claude)<small>{% if has.anthropic_key %}Chiave salvata: lascia vuoto per mantenerla.{% else %}Si crea su <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener">console.anthropic.com</a>, sezione API keys.{% endif %}</small><input type="password" name="anthropic_key"{% if has.anthropic_key %} placeholder="••••••••••••••••••••" class="secret-saved"{% endif %} autocomplete="new-password"></label>
+    <label>Chiave API di OpenAI<small>{% if has.openai_key %}Chiave salvata: lascia vuoto per mantenerla.{% else %}Si crea su <a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener">platform.openai.com</a>, sezione API keys. Serve anche per generare le immagini.{% endif %}</small><input type="password" name="openai_key"{% if has.openai_key %} placeholder="••••••••••••••••••••" class="secret-saved"{% endif %} autocomplete="new-password"></label>
+    <div class="row" style="align-items:flex-start">
+      <label style="flex:2;min-width:220px">Modello per i testi<select name="ai_text_model">{% for id, label in models %}<option value="{{ id }}"{% if s.ai_text_model == id %} selected{% endif %}>{{ label }}</option>{% endfor %}</select></label>
+      <label style="flex:1;min-width:180px">Modello per le immagini<select name="ai_image_model">{% for id, label in image_models %}<option value="{{ id }}"{% if s.ai_image_model == id %} selected{% endif %}>{{ label }}</option>{% endfor %}</select></label>
+    </div>
+    <label>Altri modelli<small>Quando esce un modello nuovo, aggiungilo qui senza aspettare un aggiornamento: uno per riga, nella forma <code>openai:nome-modello</code> o <code>anthropic:nome-modello</code>.</small><textarea name="ai_text_custom" rows="2" spellcheck="false">{{ s.ai_text_custom }}</textarea></label>
+    <label>Chi può usare «Scrivi con l'IA»<small>Ogni utente può scrivere al massimo 30 bozze al giorno, e al massimo due bozze alla volta in tutto il sito.</small><select name="ai_roles"><option value="editor"{% if s.ai_roles != "all" %} selected{% endif %}>Solo redattori e amministratori</option><option value="all"{% if s.ai_roles == "all" %} selected{% endif %}>Anche gli autori</option></select></label>
+    <label>Stile della testata<small>Indicazioni che l'IA segue in ogni articolo: tono, forme da evitare, come citare, lunghezza dei paragrafi.</small><textarea name="ai_style" rows="3" placeholder="Tono sobrio e informativo. Scrivi «il sindaco» e non «il primo cittadino». Niente punti esclamativi.">{{ s.ai_style }}</textarea></label>
+  </div>
+  <div class="panel" id="piu-letti">
+    <h2><span class="hic">{{ ic.i("grafico") }}</span>Più letti</h2>
+    <p class="panel-lead">Un blocco «I più letti» in home, con i numeri dalle visite vere di Google Analytics 4. Ogni 30 minuti il pannello chiede a Google gli articoli più visti e rigenera solo la home: chi legge il sito non fa nessuna richiesta in più (niente contatori, niente JavaScript aggiunto). Spento, la home non cambia.</p>
+    <label class="choice"><input type="checkbox" name="most_read_on"{% if s.most_read_on == "on" %} checked{% endif %}><span><strong>Mostra i più letti in home</strong><small>Usa la chiave del service account impostata in <a href="/admin/indicizzazione">Indicizzazione rapida</a>.</small></span></label>
+    <div class="row" style="align-items:flex-start">
+      <label style="flex:2;min-width:220px">ID della proprietà GA4<small>Solo numeri: in Google Analytics, Amministrazione &gt; Dettagli proprietà.</small><input name="ga_property" value="{{ s.ga_property }}" inputmode="numeric" placeholder="123456789"></label>
+      <label style="flex:1;min-width:150px">Periodo<select name="most_read_days"><option value="1"{% if s.most_read_days != "7" %} selected{% endif %}>Ultime 24 ore</option><option value="7"{% if s.most_read_days == "7" %} selected{% endif %}>Ultimi 7 giorni</option></select></label>
+      <label style="flex:1;min-width:120px">Quanti<select name="most_read_count">{% for n in ["3", "5", "8", "10"] %}<option{% if (s.most_read_count or "5") == n %} selected{% endif %}>{{ n }}</option>{% endfor %}</select></label>
+    </div>
+    <details><summary><strong>Come collegare Google Analytics</strong> <span class="muted">due minuti</span></summary>
+      <ol class="steps">
+        <li>Nel progetto Google Cloud del service account attiva la <strong>Google Analytics Data API</strong> (API e servizi &gt; Libreria).</li>
+        <li>In Google Analytics apri <strong>Amministrazione &gt; Gestione dell'accesso alla proprietà</strong>, aggiungi l'email del service account{% if sa_email %} (<code>{{ sa_email }}</code>){% endif %} con il ruolo <strong>Visualizzatore</strong>.</li>
+        <li>Copia l'ID della proprietà qui sopra, salva, poi premi <strong>Aggiorna i più letti adesso</strong> qui sotto per provare.</li>
+      </ol>
+    </details>
+  </div>
+  <div class="panel" id="email">
+    <h2><span class="hic">{{ ic.i("posta") }}</span>Email</h2>
+    <p class="panel-lead">Serve per mandare i link di recupero della password e gli avvisi di sicurezza. Funziona con qualsiasi servizio SMTP: la casella del tuo dominio, Gmail, Brevo, Mailgun, Amazon SES.</p>
+    <div class="row" style="align-items:flex-start">
+      <label style="flex:2;min-width:220px">Server SMTP<small>Per esempio smtps.aruba.it, smtp.gmail.com, smtp-relay.brevo.com.</small><input name="smtp_host" value="{{ s.smtp_host }}" autocomplete="off" spellcheck="false"></label>
+      <label style="flex:1;min-width:110px">Porta<small>Di solito 587 o 465.</small><input name="smtp_port" value="{{ s.smtp_port }}" inputmode="numeric" placeholder="587"></label>
+      <label style="flex:1;min-width:170px">Sicurezza<small>Come chiede il servizio.</small><select name="smtp_security">{% for id, label in [("starttls", "STARTTLS (porta 587)"), ("tls", "TLS (porta 465)"), ("none", "Nessuna (solo server interni)")] %}<option value="{{ id }}"{% if (s.smtp_security or "starttls") == id %} selected{% endif %}>{{ label }}</option>{% endfor %}</select></label>
+    </div>
+    <div class="row" style="align-items:flex-start">
+      <label style="flex:1;min-width:220px">Utente<small>Quasi sempre l'indirizzo email completo.</small><input name="smtp_user" value="{{ s.smtp_user }}" autocomplete="off" spellcheck="false"></label>
+      <label style="flex:1;min-width:220px">Password<small>{% if has.smtp_pass %}Password salvata: lascia vuoto per mantenerla.{% else %}Con Gmail serve una «password per le app», non quella dell'account.{% endif %}</small><input type="password" name="smtp_pass"{% if has.smtp_pass %} placeholder="••••••••••••••••••••" class="secret-saved"{% endif %} autocomplete="new-password"></label>
+    </div>
+    <div class="row" style="align-items:flex-start">
+      <label style="flex:1;min-width:220px">Indirizzo del mittente<small>Deve essere autorizzato dal servizio, di solito lo stesso dell'utente.</small><input type="email" name="smtp_from" value="{{ s.smtp_from }}" placeholder="redazione@miosito.it"></label>
+      <label style="flex:1;min-width:220px">Nome del mittente<small>Vuoto: il nome del sito.</small><input name="smtp_from_name" value="{{ s.smtp_from_name }}"></label>
+    </div>
+    <label>Indirizzo del pannello<small>Serve per i link nelle email. Vuoto: si ricava dall'indirizzo del sito (www.miosito.it diventa admin.miosito.it).</small><input name="admin_url" value="{{ s.admin_url }}" placeholder="https://admin.miosito.it" spellcheck="false"></label>
+    <details>
+      <summary><strong>Quale servizio usare</strong> <span class="muted">e dove trovare i dati</span></summary>
+      <ol class="steps">
+        <li><strong>Casella del dominio</strong> (Aruba, Register, OVH, Serverplan…): i dati SMTP sono nella guida del provider, di solito porta 465 con TLS o 587 con STARTTLS. Utente e password sono quelli della casella.</li>
+        <li><strong>Gmail o Google Workspace</strong>: server smtp.gmail.com, porta 587, STARTTLS. Come password serve una «password per le app», che Google permette di creare solo con la verifica in due passaggi attiva sull'account.</li>
+        <li><strong>Brevo, Mailgun, Amazon SES</strong>: servizi fatti per le email dei siti, arrivano meglio nella posta in arrivo. Server, porta, utente e chiave SMTP sono nella sezione SMTP del loro pannello; il dominio del mittente va verificato lì.</li>
+        <li>Salva, poi premi <strong>Invia un'email di prova</strong> qui sotto: arriva al tuo indirizzo.</li>
+      </ol>
+    </details>
+  </div>
+</div>
+<div class="side">
+  <div class="panel sticky"><button class="btn wide">{{ ic.i("spunta", 18) }}Salva le integrazioni</button></div>
+</div>
+</form>
+<form method="post" action="/admin/integrations/piu-letti" class="panel testrow">
+  <span class="hic">{{ ic.i("grafico") }}</span>
+  <div><strong>Aggiorna i più letti adesso</strong><span class="muted">Chiede subito a Google Analytics gli articoli più visti (poi succede da solo ogni 30 minuti).</span></div>
+  <button class="btn ghost">Aggiorna adesso</button>
+</form>
+<form method="post" action="/admin/integrations/email-test" class="panel testrow">
+  <span class="hic">{{ ic.i("posta") }}</span>
+  <div><strong>Invia un'email di prova</strong><span class="muted">Arriva a {{ me.email }}, con le impostazioni salvate: salva prima le modifiche.</span></div>
+  <button class="btn ghost">Invia un'email di prova</button>
+</form>
+<style>.log{list-style:none;margin:0;padding:0;display:grid;gap:12px;font-size:13px}.log li{display:grid;gap:3px;padding-bottom:12px;border-bottom:1px solid var(--line)}.log li:last-child{border:0;padding:0}.log code{overflow-wrap:anywhere;font-size:12px}
+.testrow{display:flex;align-items:center;gap:14px;flex-wrap:wrap}.testrow div{flex:1;min-width:220px}.testrow strong{display:block;color:var(--ink)}.testrow .muted{display:block}</style>
+{% endblock %}

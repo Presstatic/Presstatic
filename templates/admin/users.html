@@ -1,0 +1,34 @@
+{% extends "admin/base.html" %}
+{% block title %}Utenti | Presstatic{% endblock %}
+{% block main %}
+{% import "admin/icons.html" as ic %}
+<header class="page-head">
+  <div><h1>Utenti</h1><p class="sub">Chi può accedere al pannello e cosa può fare.</p></div>
+  <div class="actions"><a class="btn" href="/admin/users/0">{{ ic.i("nuovo", 18) }}Nuovo utente</a></div>
+</header>
+<form method="post" action="/admin/users/obbligo-2fa" class="panel" style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+  <label class="choice" style="flex:1;min-width:260px;margin:0"><input type="checkbox" name="twofa_required"{% if twofa_required %} checked{% endif %}><span><strong>Verifica in due passaggi obbligatoria per redattori e amministratori</strong><small>Chi non l'ha ancora attivata dovrà farlo prima di usare il pannello. Consigliata: redattori e amministratori possono inserire HTML libero nel sito, quindi una loro password rubata non deve bastare per entrare.</small></span></label>
+  <button class="btn">{{ ic.i("spunta", 17) }}Salva</button>
+</form>
+<table>
+<thead><tr><th>Nome</th><th>Ruolo</th><th>Articoli</th></tr></thead>
+<tbody>
+{% for u in users %}<tr>
+  <td><div class="title-cell">
+    {% if u.photo %}<img class="avatar" src="{{ u.photo }}" alt="">{% else %}<span class="avatar">{{ u.name[:1]|upper }}</span>{% endif %}
+    <div><a class="t" href="/admin/users/{{ u.id }}">{{ u.name }}</a><div class="by">{{ u.email }}{% if u.twofa %}<span class="chip tf-chip">{{ ic.i("lucchetto", 12) }}2 passaggi</span>{% endif %}</div></div>
+  </div></td>
+  <td>{% for id, label in roles %}{% if id == u.role %}<span class="chip">{{ label }}</span>{% endif %}{% endfor %}</td>
+  <td class="date">{{ u.posts }}</td>
+</tr>{% endfor %}
+</tbody>
+</table>
+<h2 style="margin:34px 0 14px">I ruoli</h2>
+<div class="roles">
+  <div class="panel"><span class="hic">{{ ic.i("articoli") }}</span><strong>Autore</strong><p class="muted">Scrive i propri articoli e li invia in revisione, non pubblica.</p></div>
+  <div class="panel"><span class="hic">{{ ic.i("spunta") }}</span><strong>Redattore</strong><p class="muted">Modifica e pubblica tutti gli articoli e le pagine, approva il lavoro degli autori.</p></div>
+  <div class="panel"><span class="hic">{{ ic.i("scudo") }}</span><strong>Amministratore</strong><p class="muted">In più gestisce utenti, impostazioni, tema e Cloudflare.</p></div>
+  <div class="panel"><span class="hic">{{ ic.i("lucchetto") }}</span><strong>Disattivato</strong><p class="muted">Non può più accedere, i suoi articoli restano.</p></div>
+</div>
+<style>.tf-chip{gap:5px;padding:2px 8px;font-size:11.5px;background:#e7f8ef;color:#0e7440}.roles{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px}.roles .panel{margin:0;display:grid;gap:8px;align-content:start}.roles strong{color:var(--ink);font-size:15.5px}.roles p{margin:0}@media (max-width:1100px){.roles{grid-template-columns:1fr 1fr}}@media (max-width:560px){.roles{grid-template-columns:1fr}}</style>
+{% endblock %}

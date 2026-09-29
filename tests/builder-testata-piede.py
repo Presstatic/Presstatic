@@ -1,0 +1,47 @@
+# Page builder: testata, menu e piè di pagina (Chromium). Modello, modifica, pubblicazione su tutte le pagine,
+# menu a scomparsa sul telefono, ritorno alla versione del tema. Usa il sito di prova in /tmp/shots.
+import asyncio, sqlite3, re, os
+from playwright.async_api import async_playwright
+A, OUT = "http://127.0.0.1:8211", "/mnt/user-data/outputs/pannello"
+res = []
+def ok(c, l): res.append(("  OK  " if c else "  NO  ") + l)
+page_html = lambda p: open(f"/tmp/shots/public/{p}", encoding="utf-8").read()
+async def main():
+    async with async_playwright() as p:
+        b = await p.chromium.launch(); ctx = await b.new_context(viewport={"width": 1600, "height": 950}, device_scale_factor=1.25, locale="it-IT"); pg = await ctx.new_page()
+        errs = []; pg.on("pageerror", lambda e: errs.append(str(e))); pg.on("dialog", lambda d: asyncio.ensure_future(d.accept()))
+        await pg.goto(A + "/admin/login"); await pg.fill("input[name=email]", "andrea@example.com"); await pg.fill("input[name=password]", "password-lunga-123"); await pg.click("form button"); await pg.wait_for_load_state("networkidle")
+        await pg.goto(A + "/admin/builder?pagina=testata"); await pg.wait_for_timeout(1500)
+        fr = pg.frame_locator("#pb-frame")
+        ok(await fr.locator("header#pb-root [data-pb-type=logo]").count() == 1 and await fr.locator("header#pb-root [data-pb-type=menu]").count() == 1, "testata: il modello ha logo, ricerca e menu, modificabili nell'anteprima")
+        ok(await fr.locator(".masthead").count() == 0 and await fr.locator("main").count() == 1, "nell'anteprima la testata del tema è sostituita, il resto della pagina è quello vero")
+        await fr.locator("[data-pb-type=menu]").click(); await pg.wait_for_timeout(300)
+        await pg.select_option("#pb-props select", "cats"); await pg.wait_for_timeout(700)
+        ok("Cronaca" in await fr.locator("[data-pb-type=menu] nav.pb-menu").text_content(), "il menu può prendere le voci dalle sezioni del giornale")
+        await pg.screenshot(path=f"{OUT}/35-builder-testata.png")
+        await pg.click("#pb-publish"); await pg.wait_for_timeout(3000)
+        art, home = page_html("ponte-riaperto/index.html"), page_html("index.html")
+        ok('id="pb-header"' in art and 'id="pb-header"' in home and 'class="masthead"' not in art, "pubblicata: la testata costruita è su tutte le pagine, anche negli articoli")
+        ok('class="pb-burger"' in art and "@media (max-width:767px){.pb-menu.pb-collapse{display:none}.pb-burger{display:block}" in art, "sul telefono il menu diventa il pulsante «Menu», fatto solo con HTML")
+        ok("data-pb" not in art and "pb-frame" not in art, "nelle pagine pubblicate non c'è niente dell'editor")
+        await pg.goto(A + "/admin/builder?pagina=piede"); await pg.wait_for_timeout(1500)
+        ok(await fr.locator("footer#pb-root [data-pb-type=copyright]").count() == 1 and await fr.locator("footer#pb-root [data-pb-type=social]").count() == 1, "piè di pagina: il modello ha nome, social, sezioni, newsletter e copyright")
+        await pg.screenshot(path=f"{OUT}/36-builder-piede.png")
+        await pg.click("#pb-publish"); await pg.wait_for_timeout(3000)
+        art = page_html("ponte-riaperto/index.html")
+        ok('id="pb-footer"' in art and 'class="site-footer"' not in art and "©" in art, "pubblicato: il piè di pagina costruito è su tutte le pagine")
+        mp = await (await b.new_context(viewport={"width": 390, "height": 844}, device_scale_factor=2, is_mobile=True)).new_page()
+        await mp.goto("http://127.0.0.1:8412/ponte-riaperto/"); await mp.wait_for_timeout(500)
+        vis = await mp.evaluate("[getComputedStyle(document.querySelector('#pb-header .pb-menu')).display, getComputedStyle(document.querySelector('#pb-header .pb-burger')).display]")
+        ok(vis == ["none", "block"], f"da telefono si vede il pulsante «Menu» al posto delle voci ({vis})")
+        await mp.click("#pb-header .pb-burger summary"); await mp.wait_for_timeout(300)
+        ok(await mp.locator("#pb-header .pb-burger nav a").first.is_visible(), "toccandolo, il menu si apre")
+        await mp.screenshot(path=f"{OUT}/37-telefono-menu-aperto.png")
+        await pg.goto(A + "/admin/builder?pagina=testata"); await pg.wait_for_timeout(800)
+        await pg.click(".pb-foot button"); await pg.wait_for_timeout(3000)
+        ok('class="masthead"' in page_html("ponte-riaperto/index.html"), "«Torna alla versione del tema»: la testata del tema torna su tutte le pagine")
+        with sqlite3.connect("/tmp/shots/presstatic.db") as c: ok(c.execute("SELECT draft FROM layouts WHERE name = 'header'").fetchone()[0] != "", "e la testata costruita resta salvata come bozza")
+        ok(not errs, "nessun errore JavaScript" + (f": {errs}" if errs else ""))
+        await b.close()
+asyncio.run(main())
+print("\n".join(res))

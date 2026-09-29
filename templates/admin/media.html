@@ -1,0 +1,133 @@
+{% extends "admin/base.html" %}
+{% block title %}Media | Presstatic{% endblock %}
+{% block main %}
+{% import "admin/icons.html" as ic %}
+<header class="page-head">
+  <div><h1>Media</h1><p class="sub">Tutte le immagini del sito. Ogni foto caricata diventa WebP in più misure; qui completi testo alternativo, didascalia e credito, e la riusi in altri articoli.</p></div>
+  <div class="actions"><label class="btn" for="mfile">{{ ic.i("carica", 18) }}Carica immagini</label><input type="file" id="mfile" accept="image/jpeg,image/png,image/webp,image/gif" multiple hidden></div>
+</header>
+<div class="drop" id="drop"><span class="hic">{{ ic.i("immagine", 22) }}</span><div><strong>Trascina qui le immagini</strong><span class="muted">JPG, PNG, WebP o GIF. Le foto del telefono vengono raddrizzate e ripulite dai dati di posizione.</span></div></div>
+<p class="msg" id="upmsg" hidden></p>
+<div class="toolbar">
+  <div class="search" role="search"><input type="search" id="mq" placeholder="Cerca per nome, didascalia o credito" aria-label="Cerca nella libreria"></div>
+  <span class="muted" id="mcount">{{ total }} immagini</span>
+</div>
+<div class="mgrid" id="grid" aria-live="polite"></div>
+<div class="mpager"><button type="button" class="btn ghost" id="more" hidden>Mostra altre immagini</button></div>
+
+<aside class="drawer" id="drawer" hidden aria-labelledby="dr-t">
+  <div class="drawer-in">
+    <div class="drawer-head"><h2 id="dr-t">Immagine</h2><button type="button" class="btn ghost small" id="drclose" aria-label="Chiudi">{{ ic.i("chiudi", 16) }}</button></div>
+    <img id="drimg" alt="">
+    <p class="muted" id="drinfo"></p>
+    <form id="drform">
+      <label>Testo alternativo<small>Descrive la foto a chi non la vede (lettori di schermo, Google). Una frase: cosa c'è nell'immagine.</small><input name="alt" maxlength="300"></label>
+      <label>Didascalia<small>Compare sotto la foto quando è in evidenza, e come proposta quando la inserisci in un articolo.</small><textarea name="caption" rows="3" maxlength="600"></textarea></label>
+      <label>Credito<small>Autore o fonte della foto, per esempio «Mario Rossi» o «Ufficio stampa del Comune». Compare come «Foto: …».</small><input name="credit" maxlength="300"></label>
+      {% if me.role in ["admin", "editor"] %}<button class="btn wide">{{ ic.i("spunta", 18) }}Salva</button>{% endif %}
+    </form>
+    <div class="dr-row"><button type="button" class="btn ghost small" id="drcopy">{{ ic.i("documento", 16) }}Copia l'indirizzo</button><a class="btn ghost small" id="dropen" target="_blank" rel="noopener">{{ ic.i("esterno", 16) }}Apri</a></div>
+    <h3 class="dr-sub">Dove è usata</h3>
+    <ul class="dr-used" id="drused"></ul>
+    {% if me.role in ["admin", "editor"] %}<button type="button" class="btn danger wide" id="drdel">{{ ic.i("cestino", 17) }}Elimina l'immagine</button>{% endif %}
+  </div>
+</aside>
+<div class="scrim2" id="scrim2" hidden></div>
+
+<style>
+.toolbar .search{flex:1;max-width:460px}
+.toolbar .search input{width:100%}
+.drop{display:flex;align-items:center;gap:14px;padding:18px 20px;margin:0 0 18px;border:2px dashed #c9d5ee;border-radius:18px;background:#fbfcff;transition:border-color .15s ease,background .15s ease}
+.drop.on{border-color:var(--blue);background:#f1f6ff}
+.drop strong{display:block;color:var(--ink)}
+.mgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:14px}
+.mcard{position:relative;display:block;padding:0;border:1px solid var(--line);border-radius:14px;overflow:hidden;background:#fff;cursor:pointer;text-align:left;box-shadow:var(--shadow-sm);transition:transform .15s ease,box-shadow .15s ease}
+.mcard:hover{transform:translateY(-2px);box-shadow:var(--shadow)}
+.mcard img{display:block;width:100%;aspect-ratio:4/3;object-fit:cover;background:#eef2fa}
+.mcard span{display:block;padding:8px 10px;font:600 12.5px/1.35 var(--sans);color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mcard .tags{position:absolute;top:8px;left:8px;display:flex;gap:4px}
+.mcard .tags i{font-style:normal;padding:2px 7px;border-radius:999px;background:rgba(10,18,51,.72);color:#fff;font:700 10.5px/1.4 var(--sans)}
+.mcard .tags i.warn{background:rgba(227,155,0,.92)}
+.mpager{display:flex;justify-content:center;margin:22px 0}
+.drawer{position:fixed;top:0;right:0;bottom:0;z-index:70;width:min(420px,100%);background:#fff;box-shadow:-30px 0 60px -30px rgba(10,18,51,.5);overflow-y:auto}
+.drawer-in{padding:22px 24px 30px}
+.drawer-head{display:flex;justify-content:space-between;align-items:center;margin:0 0 14px}
+.drawer-head h2{margin:0}
+#drimg{display:block;width:100%;max-height:260px;object-fit:contain;border-radius:14px;background:repeating-conic-gradient(#f1f4fa 0 25%,#fff 0 50%) 0 0/16px 16px;border:1px solid var(--line)}
+.dr-row{display:flex;gap:8px;margin:14px 0}
+.dr-sub{font-size:14px;margin:18px 0 8px}
+.dr-used{list-style:none;margin:0 0 18px;padding:0;display:grid;gap:6px;font-size:14px}
+.scrim2{position:fixed;inset:0;z-index:65;background:rgba(6,12,36,.35)}
+</style>
+<script nonce="{{ csp_nonce }}">
+(() => {
+  const $ = s => document.querySelector(s), grid = $('#grid'), editor = {{ "true" if me.role in ["admin", "editor"] else "false" }};
+  let page = 0, q = '', current = null;
+  const card = it => {
+    const b = document.createElement('button'); b.type = 'button'; b.className = 'mcard';
+    const img = document.createElement('img'); img.src = it.thumb; img.alt = ''; img.loading = 'lazy';
+    const name = document.createElement('span'); name.textContent = it.name || 'immagine';
+    const tags = document.createElement('div'); tags.className = 'tags';
+    if (!it.alt) { const t = document.createElement('i'); t.className = 'warn'; t.textContent = 'senza testo alternativo'; tags.append(t); }
+    if (it.credit) { const t = document.createElement('i'); t.textContent = 'credito'; tags.append(t); }
+    b.append(img, name, tags); b.onclick = () => open(it); return b;
+  };
+  async function load(reset) {
+    if (reset) { page = 0; grid.textContent = ''; }
+    const r = await (await fetch('/admin/media/list?page=' + page + '&q=' + encodeURIComponent(q))).json();
+    r.items.forEach(it => grid.append(card(it)));
+    $('#mcount').textContent = r.total + (r.total === 1 ? ' immagine' : ' immagini');
+    $('#more').hidden = page + 1 >= r.pages;
+    if (!r.items.length && reset) grid.innerHTML = '<div class="panel empty" style="grid-column:1/-1"><p>' + (q ? 'Nessuna immagine con queste parole.' : 'La libreria è vuota: carica le prime immagini qui sopra.') + '</p></div>';
+  }
+  $('#more').onclick = () => { page++; load(false); };
+  let t; $('#mq').addEventListener('input', e => { clearTimeout(t); t = setTimeout(() => { q = e.target.value.trim(); load(true); }, 250); });
+  async function upload(files) {
+    if (!files.length) return;
+    const fd = new FormData(); [...files].forEach(f => fd.append('files', f));
+    const m = $('#upmsg'); m.hidden = false; m.className = 'msg info'; m.textContent = 'Carico ' + files.length + (files.length === 1 ? ' immagine…' : ' immagini…');
+    const r = await (await fetch('/admin/media/upload', { method: 'POST', body: fd })).json();
+    m.className = r.errors.length ? 'msg err' : 'msg';
+    m.textContent = (r.items.length ? r.items.length + ' caricate. ' : '') + r.errors.join(' ');
+    load(true);
+  }
+  $('#mfile').onchange = e => upload(e.target.files);
+  const drop = $('#drop');
+  ['dragenter', 'dragover'].forEach(ev => addEventListener(ev, e => { e.preventDefault(); drop.classList.add('on'); }));
+  ['dragleave', 'drop'].forEach(ev => addEventListener(ev, e => { e.preventDefault(); if (ev === 'drop' || e.target === drop) drop.classList.remove('on'); }));
+  addEventListener('drop', e => upload(e.dataTransfer.files));
+  const dr = $('#drawer'), sc = $('#scrim2'), form = $('#drform');
+  async function open(it) {
+    current = it; dr.hidden = sc.hidden = false;
+    $('#drimg').src = it.thumb; $('#drinfo').textContent = (it.w ? it.w + ' × ' + it.h + ' pixel · ' : '') + 'caricata il ' + it.date;
+    form.alt.value = it.alt; form.caption.value = it.caption; form.credit.value = it.credit;
+    [...form.elements].forEach(el => el.disabled = !editor && el.tagName !== 'BUTTON');
+    $('#dropen').href = it.url;
+    const u = $('#drused'); u.textContent = 'Controllo…';
+    const r = await (await fetch('/admin/media/' + it.id + '/uso')).json();
+    u.textContent = '';
+    if (!r.used.length) u.innerHTML = '<li class="muted">Non è usata in nessun articolo.</li>';
+    r.used.forEach(p => { const li = document.createElement('li'), a = document.createElement('a'); a.href = '/admin/edit/' + p.id; a.textContent = p.title; li.append(a); u.append(li); });
+  }
+  const close = () => { dr.hidden = sc.hidden = true; current = null; };
+  $('#drclose').onclick = close; sc.onclick = close; addEventListener('keydown', e => { if (e.key === 'Escape') close(); });
+  form.onsubmit = async e => {
+    e.preventDefault();
+    const b = new URLSearchParams(new FormData(form));
+    await fetch('/admin/media/' + current.id, { method: 'POST', body: b });
+    Object.assign(current, { alt: form.alt.value, caption: form.caption.value, credit: form.credit.value });
+    const btn = form.querySelector('button'); btn.textContent = 'Salvato'; setTimeout(() => { btn.textContent = 'Salva'; }, 1500);
+    load(true);
+  };
+  $('#drcopy').onclick = () => navigator.clipboard.writeText(location.origin.replace('://admin.', '://www.') + current.url).then(() => { $('#drcopy').textContent = 'Copiato'; });
+  const del = $('#drdel');
+  if (del) del.onclick = async () => {
+    if (!confirm('Eliminare questa immagine con tutte le sue misure? Non si può annullare.')) return;
+    const r = await (await fetch('/admin/media/' + current.id + '/delete', { method: 'POST' })).json();
+    if (r.error) return alert('Non eliminata: ' + r.error + '.');
+    close(); load(true);
+  };
+  load(true);
+})();
+</script>
+{% endblock %}

@@ -1,0 +1,112 @@
+{% extends "admin/base.html" %}
+{% block title %}Costruisci: {{ title }} | Presstatic{% endblock %}
+{% block main %}
+{% import "admin/icons.html" as ic %}
+<script type="application/json" id="pb-data">{{ data|safe }}</script>
+<div class="pb-app">
+<div class="pb-top">
+  <a class="pb-back" href="/admin" title="Torna al pannello">← Pannello</a>
+  <div class="pb-name"><nav class="pb-pages" aria-label="Cosa costruire">{% for q, label in [("home", "Home"), ("testata", "Testata e menu"), ("piede", "Piè di pagina")] %}<a href="/admin/builder?pagina={{ q }}"{% if qname == q %} aria-current="page"{% endif %}>{{ label }}</a>{% endfor %}</nav>{% if name[:5] == "page:" %}<strong class="pb-pagename">{{ title }}</strong>{% endif %}<span class="muted" id="pb-status"></span></div>
+  <div class="pb-tools">
+    <select id="pb-tpl" aria-label="Parti da un modello"><option value="">Parti da un modello…</option></select>
+    <span class="pb-seg" role="group" aria-label="Dispositivo"><button type="button" data-dev="" class="on" title="Computer">Computer</button><button type="button" data-dev="_t" title="Tablet">Tablet</button><button type="button" data-dev="_m" title="Telefono">Telefono</button></span>
+    <button type="button" class="btn ghost small" id="pb-undo" title="Annulla (Ctrl+Z)">↶</button><button type="button" class="btn ghost small" id="pb-redo" title="Ripeti (Ctrl+Maiusc+Z)">↷</button>
+    <button type="button" class="btn ghost" id="pb-save">Salva la bozza</button>
+    <button type="button" class="btn" id="pb-publish">{{ ic.i("spunta", 17) }}Pubblica</button>
+  </div>
+</div>
+{% if msg %}<p class="msg">{{ msg }}</p>{% endif %}
+<div class="pb-ed">
+  <aside class="pb-side">
+  <div class="pb-tabs" role="tablist" aria-label="Pannello laterale"><button type="button" role="tab" data-tab="w" class="on" aria-selected="true">Widget</button><button type="button" role="tab" data-tab="p" aria-selected="false">Impostazioni</button></div>
+  <div class="pb-left pb-pane" data-pane="w"><div id="pb-palette"></div><button type="button" class="btn ghost wide" id="pb-addsec" style="margin-top:14px">＋ Aggiungi una sezione</button>
+    <p class="muted pb-help">Trascina un widget nell'anteprima, oppure cliccalo per aggiungerlo all'elemento scelto. Titoli e testi si scrivono direttamente nell'anteprima con un doppio clic. Clicca un elemento dell'anteprima per modificarlo: la barra blu lo sposta, lo duplica o lo elimina; su una sezione, ★ la salva tra i tuoi blocchi da riusare.</p></div>
+  <div class="pb-right pb-pane off" data-pane="p"><h2 id="pb-props-title">Impostazioni</h2><div id="pb-props"></div></div>
+  <div class="pb-foot">
+  {% if published %}<form method="post" action="/admin/builder/disattiva" data-confirm="Tornare alla versione del tema? La tua composizione resta salvata come bozza."><input type="hidden" name="pagina" value="{{ qname }}"><button class="btn ghost small">Torna alla versione del tema</button></form>{% endif %}
+  <span class="muted">{% if published %}Sul sito c'è la versione costruita qui. <a href="{{ base }}/" target="_blank" rel="noopener">Apri il sito</a>{% else %}Sul sito c'è ancora la versione del tema: cambia quando premi Pubblica.{% endif %}{% if name != "home" %} Testata e piè di pagina valgono per tutte le pagine del sito.{% endif %}</span>
+</div>
+  </aside>
+  <div class="pb-stage"><iframe id="pb-frame" src="/admin/builder/frame?pagina={{ qname }}" title="Anteprima: {{ title }}"></iframe></div>
+
+</div>
+
+</div>
+<dialog id="pb-pick" class="deldlg" style="width:min(760px,calc(100% - 24px))"><div style="padding:20px 22px"><div style="display:flex;justify-content:space-between;align-items:center"><h2 style="margin:0">Scegli un'immagine</h2><button type="button" class="btn ghost small" id="pb-pick-close">{{ ic.i("chiudi", 16) }}</button></div><div id="pb-pick-grid" class="pb-pick-grid"></div></div></dialog>
+<style>
+.content{max-width:none}
+.pb-top{display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;margin:0 0 14px}
+.pb-pages{display:inline-flex;gap:4px;padding:4px;border-radius:14px;background:#eef2fa;margin-bottom:4px}.pb-pages a{padding:8px 14px;border-radius:10px;font-weight:800;font-size:14px;text-decoration:none;color:var(--muted)}.pb-pages a[aria-current]{background:#fff;color:var(--ink);box-shadow:var(--shadow-sm)}.pb-name{display:grid;gap:2px}.pb-pagename{font-size:15px;color:var(--ink)}.pb-name .muted{font-size:13px}
+.pb-tools{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.pb-tools select{width:auto;margin:0}
+.pb-seg{display:inline-flex;padding:3px;border-radius:12px;background:#eef2fa;gap:2px}.pb-seg button{border:0;background:transparent;padding:7px 11px;border-radius:9px;font:700 13px var(--sans);color:var(--muted);cursor:pointer}.pb-seg button.on{background:#fff;color:var(--ink);box-shadow:var(--shadow-sm)}
+.pb-ed{display:grid;grid-template-columns:230px minmax(0,1fr) 300px;gap:14px;align-items:start}
+.pb-left,.pb-right{margin:0;position:sticky;top:14px;max-height:calc(100vh - 28px);overflow-y:auto;padding:16px}
+.pb-left h3{font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:14px 0 8px}.pb-left h3:first-child{margin-top:0}
+.pb-pal-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.pb-pal-grid button{display:grid;justify-items:center;gap:4px;padding:10px 4px;border:1px solid var(--line);border-radius:12px;background:#fff;cursor:grab;font:600 11.5px/1.2 var(--sans);color:var(--ink)}
+.pb-pal-grid button:hover{border-color:var(--blue);box-shadow:var(--shadow-sm);color:var(--blue-d)}.pb-pal-grid i{font-style:normal;font-size:17px;color:var(--blue)}
+.pb-help{font-size:12.5px;margin:12px 0 0}
+.pb-block{display:flex;gap:4px;margin:0 0 6px}.pb-block button{border:1px solid var(--line);background:#fff;border-radius:10px;padding:8px 10px;font:700 12.5px var(--sans);cursor:pointer;text-align:left}.pb-block button:first-child{flex:1;color:var(--ink)}.pb-block button:first-child::before{content:"★ ";color:#e3a400}.pb-block button:hover{border-color:var(--blue)}.pb-block .del{color:var(--red)}
+.pb-stage{background:#e9edf5;border-radius:18px;padding:10px;position:relative;overflow:hidden;height:calc(100vh - 170px)}
+#pb-frame{position:relative;left:50%;transform-origin:top center;border:0;border-radius:10px;background:#fff;box-shadow:var(--shadow)}
+.pb-right h2{margin:0 0 10px;font-size:17px}
+.pbf-tabs{display:flex;gap:4px;margin:0 0 12px;padding:3px;border-radius:10px;background:#eef2fa}.pbf-tabs button{flex:1;border:0;background:transparent;padding:7px 4px;border-radius:8px;font:700 12.5px var(--sans);color:var(--muted);cursor:pointer}.pbf-tabs button.on{background:#fff;color:var(--ink);box-shadow:var(--shadow-sm)}
+.pbf-field{display:grid;gap:5px;margin:0 0 12px;font-weight:700;font-size:13px}.pbf-field input,.pbf-field select,.pbf-field textarea{margin:0}
+.pbf-tog{display:flex;align-items:center;gap:8px;font-weight:600}.pbf-tog input{width:18px;height:18px;margin:0;accent-color:var(--blue)}
+.pbf-color{display:flex;gap:6px}.pbf-color input[type=color]{width:46px;height:38px;padding:2px}.pbf-color button{border:1px solid var(--line);background:#fff;border-radius:8px;padding:0 10px;font:600 12px var(--sans);cursor:pointer}
+.pb-dev{margin-left:6px;padding:1px 7px;border-radius:999px;background:#eef3ff;color:var(--blue-d);font-size:11px}
+.pbf-layouts{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}.pbf-layouts button{display:flex;gap:3px;height:30px;padding:5px;border:1px solid var(--line);border-radius:8px;background:#fff;cursor:pointer}.pbf-layouts i{display:block;background:#c9d6f3;border-radius:3px}.pbf-layouts button:hover i{background:var(--blue)}
+.pbf-hint{padding:14px;border-radius:12px;background:#f5f8ff;color:var(--text);font-size:13.5px;line-height:1.5}
+.pb-foot{display:flex;align-items:center;gap:14px;margin-top:14px;font-size:13.5px}
+.pb-pick-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:8px;margin-top:14px;max-height:60vh;overflow:auto}.pb-pick-grid button{padding:0;border:2px solid transparent;border-radius:10px;overflow:hidden;cursor:pointer}.pb-pick-grid button:hover{border-color:var(--blue)}.pb-pick-grid img{display:block;width:100%;aspect-ratio:1;object-fit:cover}
+@media (max-width:1300px){.pb-ed{grid-template-columns:200px minmax(0,1fr) 260px}}
+
+/* A tutto schermo, come gli editor visuali: niente barra del pannello, una barra in alto, a sinistra le schede Widget e
+   Impostazioni, tutto il resto all'anteprima (a 1920 px il computer si vede a grandezza reale). */
+body:has(.pb-app){overflow:hidden}
+#pb-find{width:100%;margin:0 0 12px;height:40px;padding:0 12px;border-radius:10px}
+.pb-pal-grid button{transition:border-color .15s,box-shadow .15s,transform .15s}.pb-pal-grid button:hover{transform:translateY(-1px)}.pb-pal-grid button:active{cursor:grabbing}
+.pb-pal-grid i svg{display:block;margin:0 auto;color:var(--blue)}.pb-pal-grid [hidden],.pb-left h3[hidden]{display:none}
+.pb-app .pb-top,.pb-app .pb-left{-webkit-user-select:none;user-select:none} /* barra e widget: niente testo selezionato trascinando */
+.pb-app{position:fixed;inset:0;z-index:60;display:grid;grid-template-rows:auto minmax(0,1fr);background:#e4e9f2}
+.pb-app .pb-top{margin:0;padding:10px 16px;gap:12px;flex-wrap:nowrap;background:linear-gradient(90deg,#0a1233,#0d1947);color:#fff;box-shadow:0 1px 0 rgba(255,255,255,.06)}
+.pb-back{flex:none;padding:8px 12px;border-radius:10px;border:1px solid rgba(255,255,255,.14);color:#dbe4ff;font-weight:800;font-size:14px;text-decoration:none}
+.pb-back:hover{background:rgba(255,255,255,.08);color:#fff}
+.pb-app .pb-name{display:flex;align-items:center;gap:12px;min-width:0;flex:1}
+.pb-app .pb-pages{margin:0;background:rgba(255,255,255,.08)}.pb-app .pb-pages a{color:#c3cdea}.pb-app .pb-pages a[aria-current]{background:#fff;color:#0a1233}
+.pb-app #pb-status{color:#9fb0dc;font-size:13px;white-space:nowrap}
+.pb-app .pb-tools{flex-wrap:nowrap}.pb-app .pb-tools select{max-width:190px;height:38px;padding-top:0;padding-bottom:0}
+.pb-app .pb-seg{background:rgba(255,255,255,.08)}.pb-app .pb-seg button{color:#c3cdea}.pb-app .pb-seg button.on{background:#fff;color:#0a1233}
+.pb-app .pb-tools .btn.ghost{background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.16);color:#fff}
+.pb-app .msg{position:fixed;top:66px;left:50%;transform:translateX(-50%);z-index:70;margin:0}
+.pb-app .pb-ed{grid-template-columns:300px minmax(0,1fr);gap:0;align-items:stretch;min-height:0}
+.pb-side{display:flex;flex-direction:column;min-height:0;overflow-y:auto;background:#fff;border-right:1px solid var(--line)}
+.pb-tabs{position:sticky;top:0;z-index:2;display:grid;grid-template-columns:1fr 1fr;background:#fff;border-bottom:1px solid var(--line)}
+.pb-tabs button{padding:13px 10px;border:0;border-bottom:3px solid transparent;background:none;font:800 14px var(--sans);color:var(--muted);cursor:pointer}
+.pb-tabs button.on{color:var(--blue-d);border-bottom-color:var(--blue)}
+.pb-app .pb-left,.pb-app .pb-right{position:static;max-height:none;overflow:visible;padding:16px}
+.pb-app .pb-foot{margin:auto 0 0;padding:14px 16px;border-top:1px solid var(--line);flex-wrap:wrap;gap:8px;font-size:12.5px}
+.pb-app .pb-stage{height:auto;border-radius:0;padding:16px;background:#e4e9f2}
+/* schermi larghi (da 1500 px): tre colonne, widget, anteprima e impostazioni tutti visibili insieme; sotto, le schede */
+@media (min-width:1500px){
+  .pb-app .pb-ed{grid-template-columns:260px minmax(0,1fr) 320px;grid-template-rows:minmax(0,1fr) auto}
+  .pb-app .pb-side{display:contents}
+  .pb-app .pb-tabs{display:none}
+  .pb-app .pb-pane{display:block;min-height:0;overflow-y:auto;background:#fff}
+  .pb-app .pb-left{grid-column:1;grid-row:1;border-right:1px solid var(--line)}
+  .pb-app .pb-foot{grid-column:1;grid-row:2;background:#fff;border-right:1px solid var(--line)}
+  .pb-app .pb-stage{grid-column:2;grid-row:1/3}
+  .pb-app .pb-right{grid-column:3;grid-row:1/3;border-left:1px solid var(--line)}
+}
+@media (max-width:1499px){.pb-app .pb-pane.off{display:none}}
+@media (max-width:1300px){.pb-app .pb-ed{grid-template-columns:270px minmax(0,1fr)}.pb-app .pb-tools select{max-width:150px}}
+@media (max-width:1100px){.pb-app #pb-status{display:none}.pb-app .pb-top{flex-wrap:wrap}}
+</style>
+<script nonce="{{ csp_nonce }}">{ const d = JSON.parse(document.getElementById('pb-data').textContent), s = document.getElementById('pb-tpl'); d.templates.forEach(([v, l]) => s.append(new Option(l, v)));
+  // Schede della colonna: «Widget» e «Impostazioni». Scegliendo un elemento nell'anteprima si passa da sole alle impostazioni.
+  const tabs = document.querySelectorAll('.pb-tabs button'), panes = document.querySelectorAll('.pb-pane'), props = document.getElementById('pb-props');
+  const show = t => { tabs.forEach(b => { b.classList.toggle('on', b.dataset.tab === t); b.setAttribute('aria-selected', b.dataset.tab === t); }); panes.forEach(p => p.classList.toggle('off', p.dataset.pane !== t)); };
+  tabs.forEach(b => b.addEventListener('click', () => show(b.dataset.tab)));
+  new MutationObserver(() => show(props.querySelector('input,select,textarea') ? 'p' : 'w')).observe(props, { childList: true }); }</script>
+<script src="/admin/assets/pb-editor.js?v={{ asset_v }}" defer></script>
+{% endblock %}

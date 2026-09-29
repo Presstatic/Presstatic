@@ -1,0 +1,63 @@
+{% extends "moderno/base.html" %}
+{% macro chip(p) %}{% if p.diretta %}<span class="live-badge">In diretta</span>{% endif %}{% if p.category %}<a class="chip c{{ p.category|tinta }}" href="{{ p.cat_url }}">{{ p.category }}</a>{% endif %}{% endmacro %}
+{% macro info(p) %}<p class="meta">{% if p.author %}<span>{{ p.author }}</span>{% endif %}<time datetime="{{ p.date_iso }}" data-ago>{{ p.date }}</time></p>{% endmacro %}
+{% macro pic(p, sizes, eager=false) %}{% if p.img %}<a class="pic" href="{{ p.url }}" tabindex="-1" aria-hidden="true"><img {{ p.img|safe }} sizes="{{ sizes }}" alt=""{% if eager %} fetchpriority="high"{% else %} loading="lazy"{% endif %}></a>{% endif %}{% endmacro %}
+{% block main %}
+{% if builder and page == 1 %}{{ builder }}{% else %}
+{% if front and page == 1 and front.top %}
+{#- Prima pagina da magazine digitale: le ultime notizie che scorrono, poi il mosaico d'apertura con i titoli sulle
+    foto, i più letti, le sezioni ognuna col suo colore e le altre notizie. Ogni blocco si adatta agli articoli. -#}
+{% set lead = front.top[0] %}{% set tops = front.top[:5] %}
+<h1 class="sr">{{ site.site_name }}{% if site.description %}: {{ site.description }}{% endif %}</h1>
+{% if front.latest %}<section class="ticker" aria-labelledby="t-title"><h2 id="t-title">Ultime</h2><ol>{% for p in front.latest %}<li><a href="{{ p.url }}"><time datetime="{{ p.date_iso }}">{{ p.time }}</time>{{ p.title }}</a></li>{% endfor %}</ol></section>{% endif %}
+<section class="bento n{{ tops|length }}" aria-label="In primo piano">
+  <article class="tile big c{{ lead.category|tinta }}">{{ pic(lead, "(min-width: 64rem) 40rem, 100vw", true) }}<div class="cap">{{ chip(lead) }}<h2><a href="{{ lead.url }}">{{ lead.title }}</a></h2>{% if lead.description %}<p class="dek">{{ lead.description }}</p>{% endif %}{{ info(lead) }}</div></article>
+  {% for p in tops[1:] %}<article class="tile c{{ p.category|tinta }}">{{ pic(p, "(min-width: 64rem) 20rem, (min-width: 40rem) 50vw, 100vw") }}<div class="cap">{{ chip(p) }}<h3><a href="{{ p.url }}">{{ p.title }}</a></h3></div></article>{% endfor %}
+</section>
+{% if front.most_read %}<section class="mostread" aria-labelledby="mr-t" data-pagefind-ignore><h2 id="mr-t">I più letti</h2><ol>{% for p in front.most_read %}<li><a href="{{ p.url }}">{{ p.title }}</a></li>{% endfor %}</ol></section>{% endif %}
+{#- Le sezioni ruotano su tre impaginazioni, come in un magazine: A) una grande, due medie e le altre in riga;
+    B) quattro in fila; C) una grande foto col titolo sopra e accanto l'elenco. -#}
+{% for s in front.sections %}{% set first = s.items[0] %}{% set v = loop.index % 3 %}
+<section class="sect c{{ s.name|tinta }}" aria-labelledby="sec-{{ loop.index }}">
+  <header class="sect-head"><h2 id="sec-{{ loop.index }}"><a href="{{ s.url }}">{{ s.name }}</a></h2><a class="all" href="{{ s.url }}">Vedi tutto<span aria-hidden="true">→</span></a></header>
+  {% if v == 1 %}<div class="sgrid va">
+    <article class="teaser card big">{{ pic(first, "(min-width: 64rem) 40rem, 100vw") }}<h3><a href="{{ first.url }}">{{ first.title }}</a></h3>{% if first.description %}<p class="dek">{{ first.description }}</p>{% endif %}{{ info(first) }}</article>
+    {% for p in s.items[1:3] %}<article class="teaser card">{{ pic(p, "(min-width: 64rem) 19rem, (min-width: 40rem) 50vw, 100vw") }}<h3><a href="{{ p.url }}">{{ p.title }}</a></h3>{{ info(p) }}</article>{% endfor %}
+    {% if s.items|length > 3 %}<div class="rows">{% for p in s.items[3:] %}<article class="teaser row-card">{{ pic(p, "6rem") }}<div><h3><a href="{{ p.url }}">{{ p.title }}</a></h3>{{ info(p) }}</div></article>{% endfor %}</div>{% endif %}
+  </div>
+  {% elif v == 2 %}<div class="sgrid vb">
+    {% for p in s.items[:4] %}<article class="teaser card">{{ pic(p, "(min-width: 64rem) 19rem, (min-width: 40rem) 50vw, 100vw") }}<h3><a href="{{ p.url }}">{{ p.title }}</a></h3>{% if loop.first and p.description %}<p class="dek">{{ p.description }}</p>{% endif %}{{ info(p) }}</article>{% endfor %}
+  </div>
+  {% if s.items|length > 4 %}<ul class="sect-list">{% for p in s.items[4:] %}<li><a href="{{ p.url }}">{{ p.title }}</a></li>{% endfor %}</ul>{% endif %}
+  {% else %}<div class="sgrid vc">
+    <article class="tile">{{ pic(first, "(min-width: 64rem) 52rem, 100vw") }}<div class="cap"><h3 class="tile-h"><a href="{{ first.url }}">{{ first.title }}</a></h3>{% if first.description %}<p class="dek">{{ first.description }}</p>{% endif %}{{ info(first) }}</div></article>
+    {% if s.items|length > 1 %}<ul class="side-list">{% for p in s.items[1:] %}<li class="teaser"><div><h3><a href="{{ p.url }}">{{ p.title }}</a></h3>{{ info(p) }}</div>{{ pic(p, "5rem") }}</li>{% endfor %}</ul>{% endif %}
+  </div>{% endif %}
+</section>
+{% if site.ad_list and loop.index % ((site.ad_list_every or "2")|int) == 0 and not loop.last %}<div class="ad ad-list" data-pagefind-ignore>{{ site.ad_list|safe }}</div>{% endif %}
+{% endfor %}
+{% if front.others %}<section aria-labelledby="others-title">
+  <header class="others-head"><h2 id="others-title">Altre notizie</h2></header>
+  <ul class="others">{% for p in front.others %}<li class="teaser">{{ chip(p) }}<h3><a href="{{ p.url }}">{{ p.title }}</a></h3>{{ info(p) }}</li>{% endfor %}</ul>
+</section>{% endif %}
+{% if next_url %}<nav class="pager"><span></span><a href="{{ next_url }}">Tutte le notizie <span aria-hidden="true">→</span></a></nav>{% endif %}
+{% else %}
+{% if author %}<header class="profile">{% if author.photo %}<img src="{{ author.photo }}" alt="{{ author.name }}" width="112" height="112">{% endif %}<p class="label">{{ label }}</p><h1 class="list-title">{{ heading }}</h1>{% if author.bio %}<p class="bio">{{ author.bio }}</p>{% endif %}</header>
+{% elif heading %}<header class="cat-hero c{{ heading|tinta }}">{% if parents %}<p class="label">{% for a in parents %}<a href="{{ a.url }}">{{ a.name }}</a>{% if not loop.last %} › {% endif %}{% endfor %}</p>{% elif label %}<p class="label">{{ label }}</p>{% endif %}<h1 class="list-title">{{ heading }}</h1>{% if cat_desc %}<p class="bio">{{ cat_desc }}</p>{% endif %}{% if children %}<nav class="subcats" aria-label="Sottosezioni">{% for c in children %}<a href="{{ c.url }}">{{ c.name }}</a>{% endfor %}</nav>{% endif %}</header>{% endif %}
+{% if notfound %}<p class="notfound">L'indirizzo che hai aperto non esiste o l'articolo è stato spostato. Ecco le ultime notizie.</p>{% endif %}
+{% if people %}<div class="people">{% for a in people %}<a class="person" href="{{ a.url }}">{% if a.photo %}<img src="{{ a.photo }}" alt="" width="96" height="96" loading="lazy">{% else %}<span class="initial">{{ a.name[:1] }}</span>{% endif %}<strong>{{ a.name }}</strong>{% if a.bio %}<span>{{ a.bio }}</span>{% endif %}</a>{% endfor %}</div>{% endif %}
+{% set has_lead = page == 1 and not notfound %}
+{% for p in (posts[:1] if has_lead else []) %}
+<article class="tile lead-tile c{{ p.category|tinta }}">{{ pic(p, "(min-width: 82rem) 80rem, 100vw", true) }}<div class="cap">{% if not heading or notfound %}{{ chip(p) }}{% endif %}<h2><a href="{{ p.url }}">{{ p.title }}</a></h2>{% if p.description %}<p class="dek">{{ p.description }}</p>{% endif %}{{ info(p) }}</div></article>
+{% endfor %}
+<div class="grid">
+{% for p in (posts[1:] if has_lead else posts) %}
+<article class="teaser c{{ p.category|tinta }}">{{ pic(p, "(min-width: 64rem) 26rem, (min-width: 40rem) 50vw, 100vw") }}{% if not heading or notfound %}{{ chip(p) }}{% endif %}<h2><a href="{{ p.url }}">{{ p.title }}</a></h2>{% if p.description %}<p class="dek">{{ p.description }}</p>{% endif %}{{ info(p) }}</article>
+{% if site.ad_list and loop.index % (((site.ad_list_every or "2")|int) * 3) == 0 and not loop.last %}<div class="ad ad-list" data-pagefind-ignore>{{ site.ad_list|safe }}</div>{% endif %}
+{% endfor %}
+</div>
+{% if not posts and not people %}<p class="notfound">Non ci sono ancora articoli pubblicati.</p>{% endif %}
+{% if prev_url or next_url %}<nav class="pager">{% if prev_url %}<a href="{{ prev_url }}"><span aria-hidden="true">←</span> Più recenti</a>{% else %}<span></span>{% endif %}{% if next_url %}<a href="{{ next_url }}">Meno recenti <span aria-hidden="true">→</span></a>{% endif %}</nav>{% endif %}
+{% endif %}
+{% endif %}
+{% endblock %}

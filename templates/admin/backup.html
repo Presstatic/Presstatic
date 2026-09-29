@@ -1,0 +1,91 @@
+{% extends "admin/base.html" %}
+{% block title %}Backup | Presstatic{% endblock %}
+{% block main %}
+{% import "admin/icons.html" as ic %}
+<header class="page-head">
+  <div><h1>Backup</h1><p class="sub">Ogni giorno Presstatic crea un archivio con il database (copia coerente, anche mentre la redazione lavora), le immagini, i temi e i file caricati, e lo manda a un archivio esterno. Pagine, sitemap e ricerca non servono: si rigenerano dal database dopo il ripristino.</p></div>
+  <div class="actions"><form method="post" action="/admin/backup/esegui"><button class="btn">{{ ic.i("scudo", 18) }}Esegui un backup adesso</button></form></div>
+</header>
+<div class="panel" id="bkprog"{% if not state.running and not state.last %} hidden{% endif %}><p style="margin:0"><strong id="bkphase">{{ state.phase if state.running else "Ultimo backup" }}</strong> <span class="muted" id="bklast">{{ "" if state.running else state.last }}</span></p></div>
+<form method="post" action="/admin/backup" class="grid">
+  <input type="hidden" name="sv" value="{{ sv }}">
+  <div>
+    <div class="panel">
+      <h2><span class="hic">{{ ic.i("cronologia") }}</span>Quando</h2>
+      <label class="choice"><input type="checkbox" name="backup_on"{% if s.backup_on == "on" %} checked{% endif %}><span><strong>Backup automatico ogni giorno</strong><small>Nell'ora scelta (fuso orario del sito). Se il server è spento a quell'ora, parte appena si riaccende.</small></span></label>
+      <div class="row" style="align-items:flex-start">
+        <label style="flex:1;min-width:140px">Ora<select name="backup_hour">{% for h in range(0, 24) %}<option value="{{ h }}"{% if (s.backup_hour or "3")|int == h %} selected{% endif %}>{{ h }}:00</option>{% endfor %}</select></label>
+        <label style="flex:1;min-width:170px">Copie da conservare<small>Nell'archivio esterno.</small><input name="backup_keep" value="{{ s.backup_keep or "14" }}" inputmode="numeric"></label>
+        <label style="flex:1;min-width:170px">Copie sul server<small>Per un ripristino veloce. 0 = nessuna.</small><input name="backup_local_keep" value="{{ s.backup_local_keep or "2" }}" inputmode="numeric"></label>
+      </div>
+    </div>
+    <div class="panel" id="s3">
+      <h2><span class="hic">{{ ic.i("carica") }}</span>Archivio compatibile S3</h2>
+      <p class="panel-lead">Wasabi, Backblaze B2, Hetzner Object Storage, Amazon S3 e Cloudflare R2 usano tutti lo stesso linguaggio (S3): basta scegliere il servizio e incollare le chiavi. Gli archivi grandi vengono caricati a pezzi da 32 MB.</p>
+      <label class="choice"><input type="checkbox" name="s3_on"{% if s.s3_on == "on" %} checked{% endif %}><span><strong>Invia i backup all'archivio S3</strong></span></label>
+      <div class="row" style="align-items:flex-start">
+        <label style="flex:1;min-width:200px">Servizio<select name="s3_provider" id="s3p">{% for id, label in [("wasabi", "Wasabi"), ("backblaze", "Backblaze B2"), ("hetzner", "Hetzner Object Storage"), ("aws", "Amazon S3"), ("r2", "Cloudflare R2"), ("altro", "Altro compatibile S3")] %}<option value="{{ id }}"{% if (s.s3_provider or "wasabi") == id %} selected{% endif %}>{{ label }}</option>{% endfor %}</select></label>
+        <label style="flex:1;min-width:160px">Regione<small id="s3rh">&nbsp;</small><input name="s3_region" id="s3r" value="{{ s.s3_region }}" spellcheck="false"></label>
+      </div>
+      <label>Indirizzo (endpoint)<small id="s3eh">&nbsp;</small><input name="s3_endpoint" id="s3e" value="{{ s.s3_endpoint }}" spellcheck="false" placeholder="https://…"></label>
+      <div class="row" style="align-items:flex-start">
+        <label style="flex:1;min-width:200px">Bucket<small>Crealo prima nel pannello del servizio, privato.</small><input name="s3_bucket" value="{{ s.s3_bucket }}" spellcheck="false"></label>
+        <label style="flex:1;min-width:200px">Cartella<small>Facoltativa, per esempio il nome del sito.</small><input name="s3_prefix" value="{{ s.s3_prefix }}" spellcheck="false" placeholder="miosito"></label>
+      </div>
+      <div class="row" style="align-items:flex-start">
+        <label style="flex:1;min-width:200px">Chiave di accesso (Access Key)<input name="s3_key" value="{{ s.s3_key }}" autocomplete="off" spellcheck="false"></label>
+        <label style="flex:1;min-width:200px">Chiave segreta (Secret Key)<small>{% if has_secret %}Salvata: lascia vuoto per mantenerla.{% else %}Resta sul server, non torna mai nel browser.{% endif %}</small><input type="password" name="s3_secret"{% if has_secret %} placeholder="••••••••••••••••••••" class="secret-saved"{% endif %} autocomplete="new-password"></label>
+      </div>
+      <p class="muted" style="margin:0">Consiglio: crea una chiave dedicata con il solo permesso di leggere e scrivere in questo bucket. Salva, poi premi «Prova il collegamento» qui accanto.</p>
+    </div>
+  </div>
+  <div class="side">
+    <div class="panel sticky"><button class="btn wide">{{ ic.i("spunta", 18) }}Salva le impostazioni</button><button class="btn ghost wide" formaction="/admin/backup/prova-s3" style="margin-top:8px">Prova il collegamento S3</button></div>
+    {% if local %}<div class="panel">
+      <h2><span class="hic">{{ ic.i("documento") }}</span>Copie sul server</h2>
+      <ul class="revs">{% for n, mb in local %}<li><a href="/admin/backup/scarica/{{ n }}">{{ n }}</a><span>{{ mb }} MB · scarica</span><button class="btn small ghost" formaction="/admin/backup/ripristina" formmethod="post" name="name" value="{{ n }}" data-confirm="Ripristinare questa copia? Il sito tornerà com'era in quel momento: articoli, utenti, impostazioni e immagini. Prima viene salvata una copia dello stato attuale." style="margin-top:6px">Ripristina</button></li>{% endfor %}</ul>
+    </div>{% endif %}
+    <div class="panel">
+      <h2><span class="hic">{{ ic.i("info") }}</span>Come si ripristina</h2>
+      <p style="font-size:14px;margin:0">Premi <strong>Ripristina</strong> accanto a una copia sul server, oppure carica qui sotto un archivio scaricato dal servizio S3. Prima di ripristinare, Presstatic salva sempre una copia dello stato attuale: se ti sbagli, torni indietro allo stesso modo.</p>
+    </div>
+  </div>
+</form>
+<form method="post" action="/admin/backup/ripristina-file" enctype="multipart/form-data" class="panel" data-confirm="Ripristinare questo archivio? Il sito tornerà com'era in quel momento. Prima viene salvata una copia dello stato attuale.">
+  <h2><span class="hic">{{ ic.i("carica") }}</span>Ripristina da un archivio</h2>
+  <p class="panel-lead">Un file <code>presstatic-backup-….tar.gz</code> scaricato dal servizio S3 o da un altro server. L'archivio viene controllato prima di toccare qualsiasi cosa.</p>
+  <div class="row" style="align-items:flex-end"><label style="margin:0">Archivio<input type="file" name="archivio" accept=".gz,.tar.gz,application/gzip" required></label><button class="btn">Ripristina</button></div>
+</form>
+{% if log %}<div class="panel">
+  <h2><span class="hic">{{ ic.i("cronologia") }}</span>Ultimi backup</h2>
+  <table class="list"><thead><tr><th>Quando</th><th>Esito</th><th>Dettagli</th></tr></thead><tbody>
+  {% for x in log %}<tr><td class="date">{{ x.date }}</td><td><span class="state {{ "Pubblicato" if x.ok else "Bozza" }}">{{ "Riuscito" if x.ok else "Con errori" }}</span></td><td style="font-size:13.5px">{{ x.note }}</td></tr>{% endfor %}
+  </tbody></table>
+</div>{% endif %}
+<script nonce="{{ csp_nonce }}">
+(() => {
+  // Indirizzi dei servizi: si compila da solo quando scegli il servizio e la regione.
+  const P = {
+    wasabi: ['https://s3.{r}.wasabisys.com', 'eu-central-1', 'Per esempio eu-central-1 (Amsterdam) o eu-south-1 (Milano).'],
+    backblaze: ['https://s3.{r}.backblazeb2.com', 'eu-central-003', 'È nel nome dell\'endpoint del bucket, per esempio eu-central-003.'],
+    hetzner: ['https://{r}.your-objectstorage.com', 'fsn1', 'fsn1 (Falkenstein), nbg1 (Norimberga) o hel1 (Helsinki).'],
+    aws: ['https://s3.{r}.amazonaws.com', 'eu-south-1', 'Per esempio eu-south-1 (Milano) o eu-central-1 (Francoforte).'],
+    r2: ['https://ID-ACCOUNT.r2.cloudflarestorage.com', 'auto', 'Per R2 la regione è sempre «auto»; nell\'indirizzo metti l\'ID del tuo account Cloudflare.'],
+    altro: ['', '', 'Come indicato dal servizio.'],
+  };
+  const p = document.getElementById('s3p'), r = document.getElementById('s3r'), e = document.getElementById('s3e');
+  const hint = () => { const x = P[p.value]; document.getElementById('s3rh').textContent = x[2]; document.getElementById('s3eh').textContent = x[0] ? 'Per questo servizio: ' + x[0].replace('{r}', r.value || x[1]) : ' '; };
+  p.onchange = () => { const x = P[p.value]; if (x[1]) r.value = x[1]; if (x[0]) e.value = x[0].replace('{r}', r.value); hint(); };
+  r.oninput = () => { const x = P[p.value]; if (x[0].includes('{r}')) e.value = x[0].replace('{r}', r.value); hint(); };
+  hint();
+  const box = document.getElementById('bkprog');
+  async function tick() {
+    const s = await (await fetch('/admin/backup/stato')).json();
+    document.getElementById('bkphase').textContent = s.running ? s.phase + '…' : 'Ultimo backup';
+    document.getElementById('bklast').textContent = s.running ? '' : s.last;
+    if (s.running) setTimeout(tick, 1000);
+  }
+  if (!box.hidden) tick();
+})();
+</script>
+{% endblock %}

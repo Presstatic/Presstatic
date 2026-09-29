@@ -1,0 +1,64 @@
+{% extends "admin/base.html" %}
+{% block title %}Commenti | Presstatic{% endblock %}
+{% block main %}
+{% import "admin/icons.html" as ic %}
+<header class="page-head">
+  <div><h1>Commenti</h1><p class="sub">I commenti dei lettori aspettano qui la tua approvazione. Approvati, entrano nella pagina dell'articolo; puoi rispondere come redazione.</p></div>
+</header>
+{% if not on %}<p class="msg info">I commenti sono spenti: si accendono in <a href="/admin/settings#commenti">Impostazioni, sezione Commenti</a>. Quelli già approvati restano qui ma non compaiono sul sito.</p>{% endif %}
+<nav class="tabs" aria-label="Stato dei commenti">
+  {% for id, label in [("pending", "Da approvare"), ("approved", "Approvati"), ("spam", "Spam")] %}<a href="/admin/commenti?s={{ id }}"{% if tab == id %} aria-current="page"{% endif %}>{{ label }} <span class="n">{{ counts[id] or 0 }}</span></a>{% endfor %}
+</nav>
+{% if rows %}
+<form method="post" action="/admin/commenti/azione" id="cform">
+<input type="hidden" name="s" value="{{ tab }}">
+<div class="cmod">
+{% for c in rows %}
+  <article class="panel cm-item">
+    <label class="ck"><input type="checkbox" name="ids" value="{{ c.id }}" aria-label="Scegli il commento di {{ c.name }}"></label>
+    <div class="cm-main">
+      <div class="cm-top"><strong>{{ c.name }}</strong>{% if c.staff %}<span class="chip">Redazione</span>{% else %}<span class="muted">{{ c.email }}</span>{% endif %}<span class="muted">{{ c.date }}</span></div>
+      <p class="cm-on">{{ "Risposta su" if c.reply else "Su" }} <a href="{{ c.url }}#commento-{{ c.id }}" target="_blank" rel="noopener">{{ c.post }}</a></p>
+      <div class="cm-body">{{ c.body }}</div>
+      <div class="cm-acts">
+        {% if tab != "approved" %}<button class="btn small" name="action" value="approve" data-pick="{{ c.id }}">{{ ic.i("spunta", 15) }}Approva</button>{% endif %}
+        {% if tab != "spam" %}<button class="btn ghost small" name="action" value="spam" data-pick="{{ c.id }}">Spam</button>{% else %}<button class="btn ghost small" name="action" value="pending" data-pick="{{ c.id }}">Non è spam</button>{% endif %}
+        <button class="btn ghost small danger-text" name="action" value="delete" data-pick="{{ c.id }}" data-confirm="Eliminare il commento (e le risposte)?">Elimina</button>
+        {% if not c.staff %}<details class="reply"><summary class="btn ghost small">Rispondi</summary><div class="reply-box"><textarea rows="3" maxlength="4000" form="r{{ c.id }}" name="body" required placeholder="La risposta compare subito, con l'etichetta «Redazione»"></textarea><button class="btn small" form="r{{ c.id }}">Pubblica la risposta</button></div></details>{% endif %}
+      </div>
+    </div>
+  </article>
+{% endfor %}
+</div>
+<div class="bulkbar" id="cbar" hidden><strong id="cn">1 scelto</strong><button class="btn" name="action" value="approve">{{ ic.i("spunta", 16) }}Approva</button><button class="btn ghost" name="action" value="spam">Spam</button><button class="btn ghost" name="action" value="delete" data-confirm="Eliminare i commenti scelti?">Elimina</button></div>
+</form>
+{% for c in rows %}{% if not c.staff %}<form id="r{{ c.id }}" method="post" action="/admin/commenti/{{ c.id }}/rispondi"></form>{% endif %}{% endfor %}
+{% else %}
+<div class="panel empty"><span class="hic">{{ ic.i("documento", 26) }}</span><p>{% if tab == "pending" %}Nessun commento da approvare.{% elif tab == "spam" %}Nessun commento tra lo spam.{% else %}Nessun commento approvato.{% endif %}</p></div>
+{% endif %}
+<style>
+.cmod{display:grid;gap:12px}
+.cm-item{display:flex;gap:14px;margin:0;padding:16px 18px}
+.cm-item .ck{margin:2px 0 0}.cm-item .ck input{width:18px;height:18px;accent-color:var(--blue)}
+.cm-main{flex:1;min-width:0}
+.cm-top{display:flex;flex-wrap:wrap;gap:10px;align-items:baseline;font-size:14px}
+.cm-on{margin:4px 0 8px;font-size:13px;color:var(--muted)}
+.cm-body{white-space:pre-wrap;overflow-wrap:anywhere;font-size:15px;line-height:1.55;color:var(--text)}
+.cm-acts{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;align-items:flex-start}
+.danger-text{color:var(--red)}
+.reply summary{list-style:none}.reply summary::-webkit-details-marker{display:none}
+.reply-box{display:grid;gap:8px;margin-top:8px;width:min(520px,100%)}
+.reply-box textarea{margin:0}
+.bulkbar{position:sticky;bottom:16px;z-index:20;display:flex;align-items:center;flex-wrap:wrap;gap:10px;margin:16px 0 0;padding:12px 16px;border-radius:18px;background:#0b1638;color:#fff;box-shadow:0 20px 40px -18px rgba(10,18,51,.6)}
+.bulkbar strong{margin-right:auto}.bulkbar .ghost{background:transparent;color:#fff;border-color:rgba(255,255,255,.3)}
+.tabs .n{display:inline-block;min-width:20px;padding:0 6px;margin-left:4px;border-radius:999px;background:#eef2fa;font-size:12px;text-align:center}
+</style>
+<script nonce="{{ csp_nonce }}">
+// Un pulsante sul singolo commento agisce solo su quel commento.
+function pick(id) { document.querySelectorAll('#cform input[name=ids]').forEach(b => { b.checked = +b.value === id; }); }
+(() => {
+  const f = document.getElementById('cform'), bar = document.getElementById('cbar'); if (!f) return;
+  f.addEventListener('change', () => { const n = f.querySelectorAll('input[name=ids]:checked').length; bar.hidden = !n; document.getElementById('cn').textContent = n + (n === 1 ? ' scelto' : ' scelti'); });
+})();
+</script>
+{% endblock %}

@@ -1,0 +1,28 @@
+{% extends "admin/base.html" %}
+{% block main %}
+{% import "admin/icons.html" as ic %}
+<header class="page-head">
+  <div><h1>Moduli</h1><p class="sub">Contatti, segnalazioni, richieste: componi i campi, inseriscili nel sito, leggi i messaggi qui.</p></div>
+  <div class="actions"><a class="btn" href="/admin/moduli/0">{{ ic.i("nuovo", 18) }}Nuovo modulo</a></div>
+</header>
+{% if forms %}<table>
+  <thead><tr><th>Modulo</th><th>Campi</th><th>Messaggi</th><th>Inoltro</th><th>Nel sito</th><th></th></tr></thead>
+  <tbody>{% for f in forms %}<tr>
+    <td><a href="/admin/moduli/{{ f.id }}"><strong>{{ f.name }}</strong></a>{% if f.consent %}<br><small class="muted">con consenso privacy</small>{% endif %}</td>
+    <td>{{ f.fields }}</td>
+    <td><a href="/admin/moduli/{{ f.id }}/messaggi">{{ f.entries }}{% if f.unread %} <span class="count">{{ f.unread }} nuovi</span>{% endif %}</a></td>
+    <td>{{ f.notify or "—" }}</td>
+    <td><code>[modulo {{ f.id }}]</code></td>
+    <td class="actions"><a class="btn small ghost" href="/admin/moduli/{{ f.id }}/messaggi">Messaggi</a></td>
+  </tr>{% endfor %}</tbody>
+</table>
+{% else %}<div class="panel"><p style="margin:0">Nessun modulo ancora. Crea il primo, per esempio «Contatti» o «Segnala una notizia»: parte già con nome, email e messaggio.</p></div>{% endif %}
+<div class="panel">
+  <h2><span class="hic">{{ ic.i("scudo") }}</span>Come si usano</h2>
+  <p class="panel-lead">Nel page builder aggiungi il widget <strong>Modulo</strong> e scegli quale; in una pagina o in un articolo scrivi <code>[modulo N]</code> su una riga da sola, con il numero che vedi qui sopra. Il modulo è HTML semplice: le pagine restano veloci. L'antispam non chiede captcha ai lettori: campo trappola, tempo minimo di compilazione e un limite di invii.</p>
+  <form method="post" action="/admin/moduli" class="row" style="align-items:flex-end">
+    <label style="margin:0">Cancella i messaggi dopo (giorni)<small>0 = conservali sempre. La privacy consiglia di non tenerli più del necessario.</small><input type="number" name="keep" min="0" max="3650" value="{{ keep }}"></label>
+    <button class="btn">Salva</button>
+  </form>
+</div>
+{% endblock %}

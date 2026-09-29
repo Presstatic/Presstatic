@@ -1,0 +1,588 @@
+{% extends "admin/base.html" %}
+{% block title %}{{ post.title or ("Nuova pagina" if post.kind == "page" else "Nuovo articolo") }} | Presstatic{% endblock %}
+{% block main %}
+{% set page = post.kind == "page" %}{% set editor = me.role in ["admin", "editor"] %}
+{% import "admin/icons.html" as ic %}
+<link rel="stylesheet" href="/admin/assets/quill.snow.css?v=2.0.3">
+<style>
+.ed-head{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin:0 0 18px}
+.ed-head .back{margin:0}
+.ed-links{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.ed-links a{display:inline-flex;align-items:center;gap:7px;height:36px;padding:0 13px;border-radius:10px;background:#fff;border:1px solid var(--line);color:var(--text);font-size:13.5px;font-weight:700;text-decoration:none;box-shadow:var(--shadow-sm)}
+.ed-links a:hover{border-color:#c4d1ec;color:var(--blue-d)}
+.ai-hint{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin:0 0 18px;padding:14px 16px;border-radius:16px;background:linear-gradient(135deg,#f3efff,#eef4ff);border:1px solid #e0d8ff}
+.ai-hint p{margin:0;flex:1;min-width:220px;color:#3b2d8f;font-weight:600}
+.writer{padding:34px 44px 26px}
+.title-in{border:0;padding:0;margin:0;resize:none;overflow:hidden;background:none;box-shadow:none;font:700 clamp(28px,3.2vw,40px)/1.15 var(--serif);letter-spacing:-.01em;word-spacing:0;color:var(--ink)}
+.dek{border:0;padding:0;margin:14px 0 20px;background:none;box-shadow:none;font:400 20px/1.5 var(--serif);word-spacing:0;color:var(--muted);resize:none}
+.title-in:focus,.dek:focus,.title-in:hover,.dek:hover{outline:none;box-shadow:none;background:none}
+.ql-toolbar.ql-snow{position:sticky;top:0;z-index:5;display:flex;flex-wrap:wrap;gap:4px;background:rgba(255,255,255,.94);backdrop-filter:blur(8px);border:0;border-top:1px solid var(--line);border-bottom:1px solid var(--line);margin:0 -44px;padding:8px 44px;font-family:var(--sans)}
+@media (max-width:1024px){.ql-toolbar.ql-snow{top:60px}}
+.ql-snow.ql-toolbar button{width:34px;height:32px;padding:6px;border-radius:8px}
+.ql-snow.ql-toolbar button:hover,.ql-snow.ql-toolbar button.ql-active{background:#eef3ff;color:var(--blue-d)}
+.ql-snow.ql-toolbar button:hover .ql-stroke,.ql-snow.ql-toolbar button.ql-active .ql-stroke{stroke:var(--blue-d)}
+.ql-snow.ql-toolbar button:hover .ql-fill,.ql-snow.ql-toolbar button.ql-active .ql-fill{fill:var(--blue-d)}
+.ql-snow .ql-formats{margin-right:10px!important;padding-right:10px;border-right:1px solid var(--line)}
+.ql-snow .ql-formats:last-child{border:0}
+.ql-container.ql-snow{border:0;font:inherit}
+.ql-editor{padding:26px 0 34px;min-height:26rem;font:400 19px/1.75 var(--serif);word-spacing:0;color:#1d2433}
+.ql-editor.ql-blank::before{left:0;font-style:normal;color:#a3acbf}
+.ql-editor p{margin:0 0 .85em}
+.ql-editor h2{font:800 1.4rem/1.3 var(--sans);word-spacing:.07em;margin:1.5rem 0 .45rem;color:var(--ink)}.ql-editor h3{font:800 1.15rem/1.3 var(--sans);margin:1.3rem 0 .35rem;color:var(--ink)}
+.ql-editor blockquote{border-left:4px solid var(--blue)!important;padding-left:18px!important;font-style:italic;color:var(--text)}
+.ql-editor img{margin:.75rem 0;border-radius:12px}.ql-editor .ql-video{width:100%;aspect-ratio:16/9;border-radius:12px}
+.ql-editor .ql-html{border:1px dashed #b9c6e2;background:#f6f8fd;padding:.8rem 1rem;margin:1rem 0;font:.8rem/1.45 ui-monospace,monospace;color:var(--muted);border-radius:12px;overflow-wrap:anywhere}
+.ql-snow .ql-tooltip{z-index:6;border-radius:12px;border-color:var(--line);box-shadow:var(--shadow);font-family:var(--sans)}
+.ql-snow .ql-tooltip::before{content:"Link:"}
+.ql-snow .ql-tooltip[data-mode=link]::before{content:"Indirizzo del link:"}
+.ql-snow .ql-tooltip a.ql-action::after{content:"Modifica"}
+.ql-snow .ql-tooltip.ql-editing a.ql-action::after{content:"Salva"}
+.ql-snow .ql-tooltip a.ql-remove::before{content:"Rimuovi"}
+.ql-toolbar .ql-html{font-weight:800;font-size:.78rem;width:auto!important;padding:0 8px!important}
+#wc{display:inline-flex;margin:0;padding:6px 12px;border-radius:999px;background:#f1f4fa;font-size:13px;font-weight:700;color:var(--muted)}#wc:empty{display:none}
+.serp{border:1px solid var(--line);border-radius:14px;padding:14px 16px;font-family:arial,sans-serif;word-spacing:normal;margin-bottom:12px;background:#fff}
+.serp-url{font-size:.78rem;color:#4d5156;overflow-wrap:anywhere}
+.serp-title{color:#1a0dab;font-size:1.1rem;line-height:1.3;margin:.2rem 0}
+.serp-desc{font-size:.83rem;color:#4d5156;line-height:1.45}
+.counts{display:grid;gap:8px;margin:0;font-size:13.5px;color:var(--muted)}
+.pubstate{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:0 0 16px}
+.pubbtns{display:grid;gap:8px}
+#imgprev{width:100%;border-radius:12px;margin-bottom:14px;aspect-ratio:16/9;object-fit:cover;box-shadow:var(--shadow-sm)}
+.revs{list-style:none;margin:0;padding:0 0 0 14px;display:grid;gap:12px;font-size:14px;border-left:2px solid #e3e9f5}
+.revs li{position:relative}.revs li::before{content:"";position:absolute;left:-20px;top:6px;width:10px;height:10px;border-radius:50%;background:#fff;border:2px solid #b8c6e4}.revs li:first-child::before{background:var(--blue);border-color:var(--blue)}
+.revs a{font-weight:700;text-decoration:none}.revs span{display:block;font-size:13px;color:var(--muted)}
+.del{display:flex;justify-content:center;margin:4px 0 20px}
+.ql-editor .ps-figure{margin:1.2rem 0;cursor:pointer;border-radius:12px;outline:2px solid transparent;outline-offset:4px}
+.ql-editor .ps-figure:hover{outline-color:#c9d8f5}
+.ql-editor .ps-figure img{display:block;width:100%;margin:0;border-radius:10px}
+.ql-editor .ps-figure figcaption{margin-top:.45rem;font:500 .8rem/1.45 var(--sans);color:var(--muted)}
+.ql-editor .ps-figure .credit{font-style:italic}
+.ql-editor .ps-gallery{display:grid;gap:8px;margin:1.2rem 0;padding:8px;border:1px dashed #c9d5ee;border-radius:14px}
+.ql-editor .ps-gallery.cols-2{grid-template-columns:1fr 1fr}.ql-editor .ps-gallery.cols-3{grid-template-columns:repeat(3,1fr)}.ql-editor .ps-gallery.cols-4{grid-template-columns:repeat(4,1fr)}
+.ql-editor .ps-gallery .ps-figure{margin:0}.ql-editor .ps-gallery img{aspect-ratio:1;object-fit:cover}
+.pickdlg{border:0;border-radius:22px;padding:0;width:min(920px,calc(100% - 24px));max-height:calc(100vh - 40px);box-shadow:0 30px 70px -30px rgba(10,18,51,.6)}
+.pickdlg::backdrop{background:rgba(10,18,51,.5);backdrop-filter:blur(3px)}
+.pk-in{display:flex;flex-direction:column;max-height:calc(100vh - 40px)}
+.pk-head{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:18px 22px 10px}
+.pk-head h2{margin:0;font-size:19px}
+.pk-bar{display:flex;gap:8px;padding:0 22px 12px}
+.pk-bar input{margin:0}
+.pk-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:10px;padding:4px 22px 12px;overflow-y:auto;min-height:160px}
+.pk-grid button{position:relative;padding:0;border:2px solid transparent;border-radius:12px;overflow:hidden;cursor:pointer;background:#eef2fa}
+.pk-grid img{display:block;width:100%;aspect-ratio:1;object-fit:cover}
+.pk-grid button[aria-pressed=true]{border-color:var(--blue);box-shadow:0 0 0 3px rgba(30,107,255,.25)}
+.pk-grid button[aria-pressed=true]::after{content:"✓";position:absolute;top:6px;right:6px;width:22px;height:22px;border-radius:50%;background:var(--blue);color:#fff;font:800 13px/22px var(--sans);text-align:center}
+.pk-detail{padding:4px 22px 0;display:grid;grid-template-columns:1fr 1fr;gap:0 14px;border-top:1px solid var(--line)}
+.pk-detail label:first-child{grid-column:1/-1}
+.pk-foot{display:flex;align-items:center;justify-content:flex-end;gap:10px;padding:14px 22px 18px;border-top:1px solid var(--line)}
+.pk-foot .muted{margin-right:auto}
+.pk-foot select{width:auto;margin:0}
+fieldset.multi{border:0;padding:0;margin:0 0 16px}
+fieldset.multi legend{padding:0;font:700 14px var(--sans);color:var(--ink);margin-bottom:6px}
+fieldset.multi legend small{display:block;font-weight:500;color:var(--muted);margin-top:2px}
+.multi-list{max-height:180px;overflow-y:auto;border:1px solid var(--line);border-radius:12px;padding:6px 0;background:#fff}
+.mchk{display:flex;align-items:center;gap:8px;margin:0;padding:6px 10px;font-weight:600;font-size:14px;cursor:pointer}
+.mchk:hover{background:#f5f8ff}
+.mchk input{width:17px;height:17px;margin:0;accent-color:var(--blue)}
+.notelist{list-style:none;margin:0 0 12px;padding:0;display:grid;gap:10px}
+.notelist li{padding:10px 12px;border-radius:12px;background:#f7f9fd;border:1px solid var(--line)}
+.notelist div{display:flex;justify-content:space-between;gap:8px;font-size:12.5px}
+.notelist div span{color:var(--muted)}
+.notelist p{margin:4px 0 0;font-size:14px;white-space:pre-wrap;overflow-wrap:anywhere}
+.linkbtn{border:0;background:none;padding:0;margin-top:4px;color:var(--red);font:600 12.5px var(--sans);cursor:pointer}
+.deldlg{border:0;border-radius:22px;padding:0;width:min(560px,calc(100% - 32px));box-shadow:0 30px 70px -30px rgba(10,18,51,.6);color:var(--text)}
+.deldlg::backdrop{background:rgba(10,18,51,.5);backdrop-filter:blur(3px)}
+.deldlg form{padding:26px 28px 24px}
+.deldlg h2{font-size:21px;margin:0 0 8px}
+.pick{margin:-4px 0 12px;padding:12px;border-radius:14px;background:#f7f9fd;border:1px solid var(--line)}
+.pick input{margin:0}
+.pick ul{list-style:none;margin:8px 0 0;padding:0;display:grid;gap:4px;max-height:220px;overflow:auto}
+.pick li button{width:100%;text-align:left;padding:9px 11px;border:0;border-radius:10px;background:#fff;font:600 14px/1.35 var(--sans);color:var(--ink);cursor:pointer;box-shadow:var(--shadow-sm)}
+.pick li button:hover,.pick li button[aria-selected=true]{background:#eef3ff;color:var(--blue-d)}
+.pick li small{display:block;font-weight:500;color:var(--muted);font-size:12px}
+.picked{margin:10px 0 0;font-size:14px;font-weight:700;color:var(--blue-d)}
+.lockwall{position:fixed;inset:0;z-index:60;display:grid;place-items:center;padding:20px;background:rgba(10,18,51,.5);backdrop-filter:blur(3px)}
+.lockbox{max-width:540px;margin:0;box-shadow:0 30px 70px -30px rgba(10,18,51,.6)}
+.lockbox .hic{width:46px;height:46px;border-radius:14px;margin-bottom:14px;background:linear-gradient(135deg,#fff5dc,#ffeccf);color:#855700;box-shadow:inset 0 0 0 1px #f6e0b0}
+.lockbox h2{font-size:21px;margin:0 0 8px}
+.lockbox .row{margin-top:18px}
+@media (max-width:640px){.writer{padding:22px 18px}.ql-toolbar.ql-snow{margin:0 -18px;padding:8px 18px}}
+</style>
+<div class="ed-head">
+  <a class="back" href="/admin{% if page %}?k=page{% endif %}">{{ ic.i("indietro", 16) }}{{ "Pagine" if page else "Articoli" }}</a>
+  <div class="ed-links">
+    {% if post.id %}<a href="/admin/preview/{{ post.id }}" target="_blank" rel="noopener">{{ ic.i("occhio", 16) }}Anteprima</a>{% endif %}
+    {% if post.id and post.status == "published" %}<a href="{{ url }}" target="_blank" rel="noopener">{{ ic.i("esterno", 16) }}Apri sul sito</a>{% endif %}
+  </div>
+</div>
+{% if not post.id and not page %}<div class="ai-hint"><span class="hic ai">{{ ic.i("ia") }}</span><p>Hai già le fonti della notizia? L'intelligenza artificiale può scrivere la prima bozza.</p><a class="btn ai small" href="/admin/ai">{{ ic.i("ia", 16) }}Scrivi la bozza con l'IA</a></div>{% endif %}
+{% if locked_by %}
+<div class="lockwall" role="dialog" aria-modal="true" aria-labelledby="lw-t">
+  <div class="panel lockbox">
+    <span class="hic">{{ ic.i("lucchetto", 22) }}</span>
+    <h2 id="lw-t">{{ locked_by }} sta modificando {{ "questa pagina" if page else "questo articolo" }}</h2>
+    <p class="muted">Il suo editor ha dato segnale {{ "pochi secondi fa" if locked_secs < 60 else "circa " ~ (locked_secs // 60) ~ " minuti fa" }}. Se subentri, {{ locked_by }} viene avvisato e i suoi pulsanti di salvataggio si disattivano, così nessuno dei due sovrascrive il lavoro dell'altro.</p>
+    <div class="row">
+      <a class="btn ghost" href="/admin{% if page %}?k=page{% endif %}">{{ ic.i("indietro", 17) }}Torna all'elenco</a>
+      <a class="btn ghost" href="/admin/preview/{{ post.id }}" target="_blank" rel="noopener">{{ ic.i("occhio", 17) }}Anteprima</a>
+      <form method="post" action="/admin/lock/{{ post.id }}/take"><button class="btn">Subentra</button></form>
+    </div>
+  </div>
+</div>
+{% endif %}
+<p class="msg err" id="taken" role="alert" hidden></p>
+<form id="f" method="post" action="/admin/edit/{{ post.id }}" enctype="multipart/form-data" class="grid">
+  {% if post.id %}<input type="hidden" name="version" value="{{ version }}">{% endif %}
+  <div>
+    {% if post.status == "pending" and editor %}<p class="msg info">{{ post.author }} ha inviato questo articolo in revisione: controllalo, poi premi Pubblica o rimandalo in bozza.</p>{% endif %}
+    <input type="hidden" name="kind" value="{{ post.kind }}">
+    <div class="panel writer">
+      <textarea class="title-in" name="title" rows="1" required maxlength="200" placeholder="Titolo" aria-label="Titolo">{{ post.title }}</textarea>
+      <textarea class="dek" name="description" rows="2" maxlength="300" placeholder="Sommario: una o due frasi che invogliano a leggere" aria-label="Sommario">{{ post.description }}</textarea>
+      <div id="editor"></div>
+      <textarea name="body" id="body" hidden>{{ post.body }}</textarea>
+      <p class="muted" id="wc"></p>
+    </div>
+  </div>
+  <div class="side">
+    <div class="panel">
+      <div class="pubstate">
+        <h2 style="margin:0"><span class="hic">{{ ic.i("calendario") }}</span>Pubblicazione</h2>
+        {% set st = {"published": "Pubblicato", "pending": "In revisione"}[post.status] or "Bozza" %}
+        <span class="state {{ st|replace(' ', '-') }}">{{ st }}</span>
+      </div>
+      {% if editor %}<label>Data di pubblicazione<small>Vuota: esce appena premi Pubblica. Nel futuro: esce da sola a quell'ora.</small>
+        <input type="datetime-local" name="published_at" value="{{ date_local if post.status == 'published' }}"></label>{% endif %}
+      <div class="pubbtns">
+        {% if editor %}
+        <button class="btn" name="status" value="published"{% if post.status == "published" %} id="savebtn"{% endif %}>{{ "Aggiorna" if post.status == "published" else "Pubblica" }}</button>
+        {% if post.status == "pending" %}<button class="btn ghost" name="status" value="pending" id="savebtn">Salva</button>{% endif %}
+        <button class="btn ghost" name="status" value="draft"{% if post.status == "draft" %} id="savebtn"{% endif %}>{{ "Ritira dal sito" if post.status == "published" else ("Rimanda in bozza" if post.status == "pending" else "Salva bozza") }}</button>
+        {% else %}
+        <button class="btn" name="status" value="pending"{% if post.status == "pending" %} id="savebtn"{% endif %}>Invia in revisione</button>
+        <button class="btn ghost" name="status" value="draft"{% if post.status != "pending" %} id="savebtn"{% endif %}>Salva bozza</button>
+        {% endif %}
+      </div>
+      {% if not page %}<input type="hidden" name="comments_field" value="1"><label class="choice" style="margin:16px 0 0"><input type="checkbox" name="comments"{% if post.comments or not post.id %} checked{% endif %}><span><strong>Commenti aperti</strong><small>Vale solo se i commenti sono attivi nelle Impostazioni.</small></span></label>{% endif %}
+      {% if editor and not page %}<label class="choice" style="margin:16px 0 0"><input type="checkbox" name="featured"{% if post.featured %} checked{% endif %}><span><strong>In evidenza in home</strong><small>Resta tra le notizie di apertura anche quando ne escono di più recenti.</small></span></label>{% endif %}
+      <p class="muted" style="margin:14px 0 0">Ctrl+S (⌘+S su Mac) salva senza cambiare lo stato.{% if not editor %} Un redattore pubblicherà l'articolo dopo averlo controllato.{% endif %}</p>
+    </div>
+    <div class="panel" id="serp" data-site="{{ site_name }}">
+      <h2><span class="hic">{{ ic.i("cerca") }}</span>Anteprima su Google</h2>
+      <div class="serp"><div class="serp-url">{{ base }}/<span id="s-slug"></span>/</div><div class="serp-title" id="s-title"></div><div class="serp-desc" id="s-desc"></div></div>
+      <p class="counts"><span>Titolo <span class="count" id="c-title"></span></span><span>Sommario <span class="count" id="c-desc"></span></span></p>
+    </div>
+    <div class="panel">
+      <h2><span class="hic">{{ ic.i("etichetta") }}</span>{{ "Indirizzo" if page else "Categoria e indirizzo" }}</h2>
+      {% if not page %}
+      <label>Categoria principale<small>Dà l'etichetta sopra il titolo e il percorso nelle briciole di pane. Scrivine una nuova o scegli tra quelle esistenti.</small><input name="category" value="{{ post.category }}" list="cats" autocomplete="off"></label>
+      <datalist id="cats">{% for c in cat_tree %}<option value="{{ c.name }}">{% endfor %}</datalist>
+      {% if cat_tree %}{% set extra = post.categories|split(", ") if post.categories else [] %}
+      <fieldset class="multi"><legend>Altre categorie <small>L'articolo compare anche nelle loro pagine. Una sottocategoria compare già nella sua categoria madre.</small></legend>
+        <input type="hidden" name="categories" id="catsval" value="{{ post.categories }}">
+        <div class="multi-list" id="catslist">{% for c in cat_tree %}<label class="mchk" style="padding-left:{{ 10 + c.depth * 18 }}px"><input type="checkbox" value="{{ c.name }}"{% if c.name in extra %} checked{% endif %}>{{ c.name }}</label>{% endfor %}</div>
+      </fieldset>{% endif %}
+      <label>Tag<small>Separati da virgola, per esempio: maltempo, protezione civile</small><input name="tags" value="{{ post.tags }}" autocomplete="off"></label>
+      <label>Parole chiave per i link interni<small>Quando queste parole compaiono in altri articoli diventano, da sole, un link a questo. Separale con una virgola, per esempio: ponte sul canale, viabilità Latina</small><input name="link_keywords" value="{{ post.link_keywords }}" autocomplete="off"></label>
+      {% if editor %}<label>Autore<select name="author_id">{% for id, name in authors %}<option value="{{ id }}"{% if id == post.author_id %} selected{% endif %}>{{ name }}</option>{% endfor %}</select></label>{% endif %}
+      {% if editor %}{% set co = post.coauthors|split(",") if post.coauthors else [] %}
+      <fieldset class="multi"><legend>Coautori <small>Firmano l'articolo insieme all'autore: compaiono nella firma, nei dati per Google e nelle loro pagine autore.</small></legend>
+        <input type="hidden" name="coauthors" id="coval" value="{{ post.coauthors }}">
+        <div class="multi-list" id="colist">{% for id, name in authors %}{% if id != post.author_id %}<label class="mchk"><input type="checkbox" value="{{ id }}"{% if id|string in co %} checked{% endif %}>{{ name }}</label>{% endif %}{% endfor %}</div>
+      </fieldset>{% endif %}
+      {% endif %}
+      <label>Indirizzo della pagina<small>Lascia vuoto per crearlo dal titolo.</small><input name="slug" value="{{ post.slug }}" autocomplete="off"></label>
+    </div>
+    <div class="panel">
+      <h2><span class="hic">{{ ic.i("immagine") }}</span>Immagine in evidenza</h2>
+      <img id="imgprev" src="{{ post.image }}" alt=""{% if not post.image %} hidden{% endif %}>
+      <button type="button" class="btn ghost wide" id="featpick" style="margin:0 0 14px">{{ ic.i("immagine", 18) }}Scegli dalla libreria</button>
+      <label>Oppure caricane una nuova<small>JPG, PNG, WebP o GIF, almeno 1200 pixel di larghezza per Google Discover. Didascalia e credito si completano nella libreria.</small><input type="file" name="upload" accept="image/jpeg,image/png,image/webp,image/gif"></label>
+      <label>Oppure il suo indirizzo<input name="image" value="{{ post.image }}"></label>
+    </div>
+    {% if post.id and not page and me.role in ["admin", "editor"] %}<div class="panel" id="livebox" data-id="{{ post.id }}" data-state="{{ diretta }}">
+      <h2><span class="hic">{{ ic.i("campanella") }}</span>Diretta <span class="count lv-on" style="background:#dc2626">in corso</span><span class="count lv-end">conclusa</span></h2>
+      <div data-when="0"><p class="muted" style="font-size:13.5px;margin-top:0">Per gli eventi da seguire minuto per minuto: gli aggiornamenti compaiono in cima con il loro orario, chi legge li riceve senza ricaricare e Google riceve i dati strutturati delle dirette.</p>
+        <button type="button" class="btn ghost wide" data-live-state="start">Trasforma in diretta</button></div>
+      <div data-when="1"><label style="margin-top:0">Titolo<small>Facoltativo.</small><input id="lv-title" maxlength="140"></label>
+        <label>Aggiornamento<textarea id="lv-body" rows="4" placeholder="Cosa sta succedendo…"></textarea></label>
+        <label class="choice" style="margin:4px 0 10px"><input type="checkbox" id="lv-key"><span><strong>Importante</strong><small>Evidenziato nella diretta.</small></span></label>
+        <button type="button" class="btn wide" id="lv-add">Pubblica l'aggiornamento</button></div>
+      <ul class="notelist" id="lv-list" style="margin:12px 0">{% for u in aggiornamenti %}<li><div><strong>{{ u.at }}{% if u.key %} · importante{% endif %}</strong><button type="button" class="btn small ghost" data-lv-del="{{ u.id }}">Elimina</button></div>{% if u.title %}<p><strong>{{ u.title }}</strong></p>{% endif %}<p>{{ u.body }}</p></li>{% endfor %}</ul>
+      <div data-when="1"><button type="button" class="btn ghost wide" data-live-state="end">Chiudi la diretta</button></div>
+      <div data-when="2"><button type="button" class="btn ghost wide" data-live-state="reopen">Riapri la diretta</button></div>
+    </div>{% endif %}
+    {% if not page %}<div class="panel">
+      <h2><span class="hic">{{ ic.i("codice") }}</span>Dati strutturati</h2>
+      <label>Tipo di contenuto<select name="schema_type" id="schema_type">
+        {% for key, d in schemas|items %}<option value="{{ key }}"{% if key == post.schema_type %} selected{% endif %}>{{ d.label }}</option>{% endfor %}
+      </select></label>
+      {% for key, d in schemas|items %}{% if d.fields %}
+      <fieldset data-schema="{{ key }}"{% if key != post.schema_type %} hidden{% endif %}>
+        <legend>{{ d.label }}</legend>
+        {% for f in d.fields %}<label>{{ f.label }}
+          {% if f.kind in ["lines", "steps"] %}<textarea name="sd_{{ f.key }}" rows="5">{{ sd[f.key] if key == post.schema_type }}</textarea>
+          {% else %}<input name="sd_{{ f.key }}" value="{{ sd[f.key] if key == post.schema_type }}"{% if f.kind in ["minutes", "number"] %} inputmode="decimal"{% endif %}{% if f.kind == "url" %} type="url" pattern="https://.*" placeholder="https://"{% endif %}>{% endif %}
+        </label>{% endfor %}
+      </fieldset>{% endif %}{% endfor %}
+    </div>{% endif %}
+    {% if page and post.id and me.role == "admin" %}<div class="panel">
+      <h2><span class="hic">{{ ic.i("griglia") }}</span>Page builder</h2>
+      <p class="muted" style="margin-top:-6px">Componi questa pagina con sezioni, colonne e widget, come la home. Finché non pubblichi dal builder, sul sito resta il testo scritto qui.</p>
+      <a class="btn ghost wide" href="/admin/builder?pagina=p{{ post.id }}">{{ ic.i("griglia", 17) }}Costruisci con il page builder</a>
+    </div>{% endif %}
+    {% if post.id %}<div class="panel notes" id="notes" data-me="{{ me.name }}">
+      <h2><span class="hic">{{ ic.i("documento") }}</span>Note della redazione</h2>
+      <p class="muted" style="margin-top:-6px">Messaggi tra autori e redattori su questo articolo, per esempio cosa correggere prima di pubblicare. Non compaiono mai sul sito; chi ha scritto l'articolo riceve un'email.</p>
+      <ul class="notelist" id="notelist">{% for n in notes %}<li><div><strong>{{ n.who }}</strong><span>{{ n.when }}</span></div><p>{{ n.body }}</p>{% if n.user_id == me.id or me.role == "admin" %}<button type="button" class="linkbtn" data-note="{{ n.id }}">Elimina</button>{% endif %}</li>{% endfor %}</ul>
+      <textarea id="notebody" rows="3" maxlength="2000" placeholder="Scrivi una nota…" aria-label="Nuova nota"></textarea>
+      <button type="button" class="btn ghost wide" id="noteadd">{{ ic.i("spunta", 17) }}Aggiungi la nota</button>
+    </div>{% endif %}
+    {% if revisions %}<div class="panel">
+      <h2><span class="hic">{{ ic.i("cronologia") }}</span>Cronologia</h2>
+      <ul class="revs">
+        {% for id, date, who in revisions %}<li><a href="/admin/revision/{{ id }}">{{ date }}</a><span>{{ who }}{% if loop.first %}, versione attuale{% endif %}</span></li>{% endfor %}
+      </ul>
+    </div>{% endif %}
+    {% if post.id %}<div class="del">{% if live %}<button type="button" class="btn danger" id="delopen">{{ ic.i("cestino", 17) }}{{ "Elimina pagina" if page else "Elimina articolo" }}</button>{% else %}<button class="btn danger" form="del">{{ ic.i("cestino", 17) }}{{ "Elimina pagina" if page else "Elimina articolo" }}</button>{% endif %}</div>{% endif %}
+  </div>
+</form>
+<dialog id="picker" class="pickdlg" aria-labelledby="pk-t">
+  <div class="pk-in">
+    <div class="pk-head"><h2 id="pk-t">Scegli dalla libreria</h2><button type="button" class="btn ghost small" id="pk-close" aria-label="Chiudi">{{ ic.i("chiudi", 16) }}</button></div>
+    <div class="pk-bar"><input type="search" id="pk-q" placeholder="Cerca per nome, didascalia o credito" aria-label="Cerca nella libreria"><label class="btn ghost small" for="pk-file" style="white-space:nowrap">{{ ic.i("carica", 16) }}Carica nuove</label><input type="file" id="pk-file" accept="image/jpeg,image/png,image/webp,image/gif" multiple hidden></div>
+    <div class="pk-grid" id="pk-grid"></div>
+    <div class="pk-detail" id="pk-detail" hidden>
+      <label>Testo alternativo<small>Cosa c'è nella foto, in una frase: serve a chi non vede l'immagine e a Google.</small><input id="pk-alt" maxlength="300"></label>
+      <label>Didascalia<input id="pk-cap" maxlength="600"></label>
+      <label>Credito<input id="pk-cred" maxlength="300" placeholder="Autore o fonte della foto"></label>
+    </div>
+    <div class="pk-foot"><span class="muted" id="pk-sel">Nessuna immagine scelta</span><select id="pk-cols" hidden aria-label="Colonne della galleria"><option value="2">2 colonne</option><option value="3" selected>3 colonne</option><option value="4">4 colonne</option></select><button type="button" class="btn" id="pk-ok" disabled>Inserisci</button></div>
+  </div>
+</dialog>
+<dialog id="figdlg" class="deldlg" aria-labelledby="fg-t">
+  <form method="dialog" id="figform">
+    <h2 id="fg-t">Foto nel testo</h2>
+    <label>Testo alternativo<input name="alt" maxlength="300"></label>
+    <label>Didascalia<input name="caption" maxlength="600"></label>
+    <label>Credito<input name="credit" maxlength="300"></label>
+    <div class="row" style="justify-content:space-between;margin-top:6px"><button type="button" class="btn danger" id="fg-del">{{ ic.i("cestino", 16) }}Togli dal testo</button><span class="row"><button type="button" class="btn ghost" id="fg-cancel">Annulla</button><button class="btn" value="ok">Aggiorna</button></span></div>
+  </form>
+</dialog>
+{% if live %}
+<dialog id="deldlg" class="deldlg" aria-labelledby="del-t">
+  <form id="del" method="post" action="/admin/delete/{{ post.id }}">
+    <h2 id="del-t">Eliminare {{ "questa pagina" if page else "questo articolo" }}?</h2>
+    <p class="muted">Verrà cancellato insieme alla sua cronologia. Chi arriva al suo indirizzo, da Google o da un link, dove deve finire?</p>
+    <label class="choice"><input type="radio" name="redirect" value="post"><span><strong>Su un altro articolo o pagina</strong><small>La scelta migliore: un contenuto sullo stesso argomento mantiene il valore dei link verso questo indirizzo.</small></span></label>
+    <div class="pick" id="pick" hidden>
+      <input type="search" id="pickq" placeholder="Cerca per titolo" autocomplete="off" aria-label="Cerca l'articolo o la pagina di destinazione">
+      <ul id="picklist" role="listbox"></ul>
+      <input type="hidden" name="target_id" id="target_id">
+      <p class="picked" id="picked" hidden></p>
+    </div>
+    <label class="choice"><input type="radio" name="redirect" value="home" checked><span><strong>Sulla home del sito</strong><small>Se la home non parla dello stesso argomento, Google può trattare l'indirizzo come una pagina non trovata.</small></span></label>
+    <label class="choice"><input type="radio" name="redirect" value="none"><span><strong>Nessun reindirizzamento</strong><small>L'indirizzo risponde «pagina non trovata» e Google lo toglie dai risultati.</small></span></label>
+    <p class="msg err" id="pickerr" hidden>Scegli l'articolo o la pagina di destinazione.</p>
+    <div class="row" style="justify-content:flex-end;margin-top:6px"><button type="button" class="btn ghost" id="delcancel">Annulla</button><button class="btn danger" style="background:var(--red);color:#fff;border-color:var(--red)">{{ ic.i("cestino", 17) }}Elimina</button></div>
+  </form>
+</dialog>
+{% else %}
+<form id="del" method="post" action="/admin/delete/{{ post.id }}" data-confirm="Eliminare definitivamente? Anche la cronologia verrà cancellata."></form>
+{% endif %}
+<script src="/admin/assets/quill.js?v=2.0.3"></script>
+<script nonce="{{ csp_nonce }}">
+const $ = s => document.querySelector(s), form = $('#f'), src = $('#body');
+
+// Blocco "codice incorporato" (post di Instagram, X, TikTok, mappe): il codice resta intatto nella pagina pubblicata.
+const BlockEmbed = Quill.import('blots/block/embed');
+class Html extends BlockEmbed {
+  static create(v) { const n = super.create(); n.dataset.html = v; n.setAttribute('contenteditable', 'false'); n.textContent = 'Codice incorporato: ' + v.slice(0, 140) + (v.length > 140 ? '…' : ''); return n; }
+  static value(n) { return n.dataset.html; }
+}
+Object.assign(Html, { blotName: 'html', tagName: 'DIV', className: 'ql-html' });
+Quill.register(Html);
+// Foto con didascalia e credito, e gallerie: nel testo salvato restano HTML semplice (figure, figcaption), senza attributi dell'editor.
+const esc = v => String(v ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const figHtml = v => '<img src="' + esc(v.src) + '" alt="' + esc(v.alt) + '">' + (v.caption || v.credit ? '<figcaption>' + esc(v.caption) + (v.credit ? ' <span class="credit">Foto: ' + esc(v.credit) + '</span>' : '') + '</figcaption>' : '');
+function figValue(n) {
+  const img = n.querySelector('img'), fc = n.querySelector('figcaption'), cr = fc && fc.querySelector('.credit');
+  let caption = ''; if (fc) { const c = fc.cloneNode(true); c.querySelector('.credit')?.remove(); caption = c.textContent.trim(); }
+  return { src: img ? img.getAttribute('src') : '', alt: img ? img.getAttribute('alt') || '' : '', caption, credit: cr ? cr.textContent.replace(/^Foto:\s*/, '').trim() : '' };
+}
+class Figure extends BlockEmbed {
+  static create(v) { const n = super.create(); n.setAttribute('contenteditable', 'false'); n.innerHTML = figHtml(v); return n; }
+  static value(n) { return figValue(n); }
+}
+Object.assign(Figure, { blotName: 'figure', tagName: 'FIGURE', className: 'ps-figure' });
+class Gallery extends BlockEmbed {
+  static create(v) { const n = super.create(); n.setAttribute('contenteditable', 'false'); n.classList.add('cols-' + (v.cols || 3)); n.innerHTML = (v.items || []).map(i => '<figure class="ps-figure">' + figHtml(i) + '</figure>').join(''); return n; }
+  static value(n) { const c = [...n.classList].find(x => /^cols-\d$/.test(x)); return { cols: c ? +c.slice(5) : 3, items: [...n.querySelectorAll('figure')].map(figValue) }; }
+}
+Object.assign(Gallery, { blotName: 'gallery', tagName: 'DIV', className: 'ps-gallery' });
+Quill.register(Figure); Quill.register(Gallery);
+Quill.import('ui/icons').gallery = '<svg viewBox="0 0 18 18"><rect class="ql-stroke" x="2" y="2" width="6" height="6" rx="1"/><rect class="ql-stroke" x="10" y="2" width="6" height="6" rx="1"/><rect class="ql-stroke" x="2" y="10" width="6" height="6" rx="1"/><rect class="ql-stroke" x="10" y="10" width="6" height="6" rx="1"/></svg>';
+// Immagini con testo alternativo.
+const BaseImage = Quill.import('formats/image');
+class Image extends BaseImage {
+  static create(v) { const n = super.create(typeof v === 'string' ? v : v.src); if (v.alt) n.setAttribute('alt', v.alt); return n; }
+  static value(n) { return { src: n.getAttribute('src'), alt: n.getAttribute('alt') || '' }; }
+}
+Quill.register(Image, true);
+Quill.import('ui/icons').html = '&lt;/&gt;';
+
+const q = new Quill('#editor', {
+  theme: 'snow', placeholder: 'Scrivi qui il testo…',
+  formats: ['header', 'bold', 'italic', 'link', 'list', 'blockquote', 'image', 'video', 'html', 'figure', 'gallery'],
+  modules: { toolbar: { container: [[{ header: 2 }, { header: 3 }], ['bold', 'italic', 'link'], [{ list: 'ordered' }, { list: 'bullet' }, 'blockquote'], ['image', 'gallery', 'video', 'html'], ['clean']],
+    handlers: { image: () => pick('image'), gallery: () => pick('gallery'), video: addVideo, html: addHtml } } },
+});
+q.theme.tooltip.textbox.dataset.link = 'https://';
+const labels = { 'ql-gallery': 'Galleria di foto', 'ql-bold': 'Grassetto', 'ql-italic': 'Corsivo', 'ql-link': 'Link', 'ql-blockquote': 'Citazione', 'ql-image': 'Foto dalla libreria, con didascalia e credito', 'ql-video': 'Video di YouTube o Vimeo', 'ql-html': 'Incorpora un post social o una mappa', 'ql-clean': 'Togli la formattazione' };
+document.querySelectorAll('.ql-toolbar button').forEach(b => {
+  const t = labels[b.className] || { 2: 'Titoletto', 3: 'Sottotitoletto', ordered: 'Elenco numerato', bullet: 'Elenco puntato' }[b.value];
+  if (t) { b.title = t; b.setAttribute('aria-label', t); }
+});
+
+// Carica il testo salvato, riconoscendo i blocchi incorporati.
+const doc = new DOMParser().parseFromString(src.value, 'text/html');
+doc.querySelectorAll('div.embed').forEach(e => { const d = doc.createElement('div'); d.className = 'ql-html'; d.dataset.html = e.innerHTML; e.replaceWith(d); });
+q.setContents(q.clipboard.convert({ html: doc.body.innerHTML }), 'silent');
+
+const at = () => (q.getSelection(true) || { index: q.getLength() }).index;
+function addImage() {
+  const i = document.createElement('input'); i.type = 'file'; i.accept = 'image/*';
+  i.onchange = async () => {
+    const fd = new FormData(); fd.append('file', i.files[0]);
+    const r = await (await fetch('/admin/upload', { method: 'POST', body: fd })).json();
+    if (r.error) return alert(r.error);
+    const alt = prompt("Descrivi l'immagine in poche parole: serve a Google e a chi usa un lettore di schermo.", '') || '';
+    const p = at(); q.insertEmbed(p, 'image', { src: r.url, alt }, 'user'); q.setSelection(p + 1);
+  };
+  i.click();
+}
+const pk = { dlg: $('#picker'), grid: $('#pk-grid'), mode: 'image', sel: [], page: 0, q: '', at: 0 };
+async function pkLoad(reset) {
+  if (reset) { pk.page = 0; pk.grid.textContent = ''; }
+  const r = await (await fetch('/admin/media/list?page=' + pk.page + '&q=' + encodeURIComponent(pk.q))).json();
+  for (const it of r.items) {
+    const b = document.createElement('button'); b.type = 'button'; b.title = it.name; b.setAttribute('aria-pressed', pk.sel.some(x => x.id === it.id));
+    const im = document.createElement('img'); im.src = it.thumb; im.alt = it.alt || it.name; im.loading = 'lazy'; b.append(im);
+    b.onclick = () => pkToggle(it, b); pk.grid.append(b);
+  }
+  if (pk.page + 1 < r.pages) { const m = document.createElement('button'); m.type = 'button'; m.className = 'btn ghost small'; m.style.gridColumn = '1/-1'; m.textContent = 'Altre immagini'; m.onclick = () => { m.remove(); pk.page++; pkLoad(false); }; pk.grid.append(m); }
+  if (!r.items.length && reset) pk.grid.innerHTML = '<p class="muted" style="grid-column:1/-1">' + (pk.q ? 'Nessuna immagine con queste parole.' : 'La libreria è vuota: carica le prime immagini con «Carica nuove».') + '</p>';
+}
+function pkToggle(it, b) {
+  if (pk.mode === 'gallery') {
+    const i = pk.sel.findIndex(x => x.id === it.id);
+    if (i >= 0) pk.sel.splice(i, 1); else pk.sel.push(it);
+    b.setAttribute('aria-pressed', i < 0);
+  } else {
+    pk.sel = [it]; pk.grid.querySelectorAll('[aria-pressed]').forEach(x => x.setAttribute('aria-pressed', x === b));
+    if (pk.mode === 'image') { $('#pk-detail').hidden = false; $('#pk-alt').value = it.alt; $('#pk-cap').value = it.caption; $('#pk-cred').value = it.credit; $('#pk-alt').focus(); }
+  }
+  $('#pk-sel').textContent = pk.sel.length ? (pk.mode === 'gallery' ? pk.sel.length + ' foto scelte, nell\'ordine in cui le hai scelte' : 'Scelta: ' + pk.sel[0].name) : 'Nessuna immagine scelta';
+  $('#pk-ok').disabled = !pk.sel.length || (pk.mode === 'gallery' && pk.sel.length < 2);
+}
+function pick(mode) {
+  Object.assign(pk, { mode, sel: [], q: '', at: (q.getSelection(true) || { index: q.getLength() }).index });
+  $('#pk-t').textContent = { image: 'Foto nel testo', gallery: 'Galleria di foto: scegline almeno due', featured: 'Foto in evidenza' }[mode];
+  $('#pk-ok').textContent = mode === 'featured' ? 'Usa come foto in evidenza' : 'Inserisci'; $('#pk-ok').disabled = true;
+  $('#pk-detail').hidden = true; $('#pk-cols').hidden = mode !== 'gallery'; $('#pk-q').value = ''; $('#pk-sel').textContent = 'Nessuna immagine scelta';
+  pk.dlg.showModal(); pkLoad(true);
+}
+$('#pk-close').onclick = () => pk.dlg.close();
+let pkT; $('#pk-q').addEventListener('input', e => { clearTimeout(pkT); pkT = setTimeout(() => { pk.q = e.target.value.trim(); pkLoad(true); }, 250); });
+$('#pk-file').onchange = async e => {
+  const fd = new FormData(); [...e.target.files].forEach(f => fd.append('files', f));
+  const r = await (await fetch('/admin/media/upload', { method: 'POST', body: fd })).json();
+  if (r.errors.length) alert(r.errors.join('\n'));
+  pk.q = ''; await pkLoad(true);
+  if (r.items[0]) { const first = pk.grid.querySelector('button'); if (first) pkToggle(r.items[0], first); }
+  e.target.value = '';
+};
+$('#pk-ok').onclick = () => {
+  const one = pk.sel[0];
+  if (pk.mode === 'featured') {
+    form.elements.image.value = one.url; $('#imgprev').src = one.thumb; $('#imgprev').hidden = false; dirty = true;
+  } else if (pk.mode === 'gallery') {
+    q.insertEmbed(pk.at, 'gallery', { cols: +$('#pk-cols').value, items: pk.sel.map(i => ({ src: i.url, alt: i.alt, caption: i.caption, credit: i.credit })) }, 'user');
+    q.setSelection(pk.at + 1);
+  } else {
+    const alt = $('#pk-alt').value.trim();
+    if (!alt && !confirm('Senza testo alternativo chi non vede la foto (e Google) non sa cosa mostra. Inserirla lo stesso?')) return;
+    q.insertEmbed(pk.at, 'figure', { src: one.url, alt, caption: $('#pk-cap').value.trim(), credit: $('#pk-cred').value.trim() }, 'user');
+    q.setSelection(pk.at + 1);
+  }
+  pk.dlg.close();
+};
+$('#featpick').onclick = () => pick('featured');
+// Clic su una foto nel testo: si modificano testo alternativo, didascalia e credito, o la si toglie.
+const fg = { dlg: $('#figdlg'), blot: null };
+q.root.addEventListener('click', e => {
+  const n = e.target.closest('figure.ps-figure'); if (!n || n.closest('.ps-gallery')) return;
+  fg.blot = Quill.find(n); const v = figValue(n), f = $('#figform');
+  f.alt.value = v.alt; f.caption.value = v.caption; f.credit.value = v.credit; fg.src = v.src; fg.dlg.showModal();
+});
+$('#fg-cancel').onclick = () => fg.dlg.close();
+$('#fg-del').onclick = () => { const i = q.getIndex(fg.blot); q.deleteText(i, 1, 'user'); fg.dlg.close(); };
+$('#figform').addEventListener('submit', () => {
+  const f = $('#figform'), i = q.getIndex(fg.blot);
+  q.deleteText(i, 1, 'user'); q.insertEmbed(i, 'figure', { src: fg.src, alt: f.alt.value.trim(), caption: f.caption.value.trim(), credit: f.credit.value.trim() }, 'user');
+});
+function addVideo() {
+  let u = prompt('Link del video (YouTube o Vimeo):'); if (!u) return;
+  const y = u.match(/(?:youtu\.be\/|v=|shorts\/|embed\/)([\w-]{11})/), v = u.match(/vimeo\.com\/(?:video\/)?(\d+)/);
+  u = y ? 'https://www.youtube-nocookie.com/embed/' + y[1] : v ? 'https://player.vimeo.com/video/' + v[1] : u;
+  q.insertEmbed(at(), 'video', u, 'user');
+}
+function addHtml() {
+  const h = prompt('Incolla il codice di incorporamento (Instagram, X, TikTok, Facebook, Google Maps…):');
+  if (h) q.insertEmbed(at(), 'html', h.trim(), 'user');
+}
+
+// Conteggio parole, anteprima Google, modifiche non salvate.
+let dirty = false;
+function wc() { const w = q.getText().trim().split(/\s+/).filter(Boolean).length; $('#wc').textContent = w ? w + ' parole, circa ' + Math.max(1, Math.round(w / 200)) + ' min di lettura' : ''; }
+q.on('text-change', (d, o, source) => { if (source === 'user') dirty = true; wc(); });
+wc();
+const slugify = t => t.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 80);
+function count(el, n, lo, hi) { el.textContent = n + ' caratteri' + (n > hi ? ', troppo lungo' : n < lo ? ', un po\' corto' : ''); el.className = 'count ' + (n >= lo && n <= hi ? 'ok' : 'warn'); }
+function serp() {
+  const t = form.elements.title.value || 'Titolo dell\'articolo', full = t + ' | ' + $('#serp').dataset.site, d = form.elements.description.value;
+  $('#s-title').textContent = full.length > 62 ? full.slice(0, 60) + '…' : full;
+  $('#s-desc').textContent = d ? (d.length > 160 ? d.slice(0, 158) + '…' : d) : 'Scrivi un sommario: Google lo usa spesso come descrizione.';
+  $('#s-slug').textContent = slugify(form.elements.slug.value || t);
+  count($('#c-title'), full.length, 30, 60); count($('#c-desc'), d.length, 70, 160);
+}
+// Il titolo va a capo invece di sparire a destra, ma resta su una sola riga di testo.
+const title = form.elements.title, grow = () => { title.value = title.value.replace(/\n/g, ' '); title.style.height = 'auto'; title.style.height = title.scrollHeight + 'px'; };
+title.addEventListener('keydown', e => { if (e.key === 'Enter') e.preventDefault(); });
+title.addEventListener('input', grow); grow();
+form.addEventListener('input', () => { dirty = true; serp(); });
+serp();
+form.elements.upload.onchange = e => { const f = e.target.files[0]; if (f) { $('#imgprev').src = URL.createObjectURL(f); $('#imgprev').hidden = false; } };
+const t = $('#schema_type');
+if (t) t.onchange = () => document.querySelectorAll('[data-schema]').forEach(f => f.hidden = f.dataset.schema !== t.value);
+window.addEventListener('beforeunload', e => { if (dirty) { e.preventDefault(); e.returnValue = ''; } });
+document.addEventListener('keydown', e => { if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') { e.preventDefault(); $('#savebtn')?.click(); } });
+
+// Al salvataggio: HTML pulito e semantico (ul/ol veri, niente marcatori dell'editor),
+// con i blocchi incorporati riportati al loro codice originale.
+function cleanHtml() {
+  const out = new DOMParser().parseFromString(q.root.innerHTML, 'text/html'), b = out.body;
+  b.querySelectorAll('.ql-ui').forEach(e => e.remove());
+  b.querySelectorAll('[contenteditable]').forEach(e => e.removeAttribute('contenteditable'));
+  b.querySelectorAll('div.ql-html').forEach(e => { const d = out.createElement('div'); d.className = 'embed'; d.innerHTML = e.dataset.html; e.replaceWith(d); });
+  b.querySelectorAll('ol').forEach(ol => {
+    let list = null;
+    [...ol.children].forEach(li => {
+      const tag = li.dataset.list === 'bullet' ? 'UL' : 'OL';
+      if (!list || list.tagName !== tag) { list = out.createElement(tag); ol.before(list); }
+      li.removeAttribute('data-list'); list.append(li);
+    });
+    ol.remove();
+  });
+  return q.getText().trim() || b.querySelector('img,iframe,.embed') ? b.innerHTML : '';
+}
+form.addEventListener('submit', () => { src.value = cleanHtml(); dirty = false; });
+// Categorie aggiuntive e coautori: le caselle scelte diventano un elenco separato da virgole.
+for (const [list, input, sep] of [['#catslist', '#catsval', ', '], ['#colist', '#coval', ',']]) {
+  const l = $(list); if (!l) continue;
+  l.addEventListener('change', () => { $(input).value = [...l.querySelectorAll('input:checked')].map(x => x.value).join(sep); dirty = true; });
+}
+{% if post.id %}
+// Note della redazione: si inviano senza ricaricare la pagina (così l'articolo non ancora salvato non si perde).
+(() => {
+  const box = $('#notes'); if (!box) return;
+  box.addEventListener('input', e => e.stopPropagation()); // scrivere una nota non conta come modifica dell'articolo
+  $('#noteadd').onclick = async () => {
+    const t = $('#notebody'), body = t.value.trim(); if (!body) return t.focus();
+    const r = await fetch('/admin/edit/{{ post.id }}/note', { method: 'POST', headers: { Accept: 'application/json' }, body: new URLSearchParams({ body }) });
+    const j = await r.json();
+    if (j.error) return alert(j.error);
+    const li = document.createElement('li'), d = document.createElement('div'), w = document.createElement('strong'), when = document.createElement('span'), p = document.createElement('p');
+    w.textContent = box.dataset.me; when.textContent = 'adesso'; p.textContent = body; d.append(w, when); li.append(d, p); $('#notelist').append(li); t.value = '';
+  };
+  $('#notelist').addEventListener('click', async e => {
+    const b = e.target.closest('[data-note]'); if (!b || !confirm('Eliminare questa nota?')) return;
+    await fetch('/admin/note/' + b.dataset.note + '/delete', { method: 'POST', headers: { Accept: 'application/json' } });
+    b.closest('li').remove();
+  });
+})();
+{% endif %}
+{% if live %}
+// Eliminazione di un articolo online: si sceglie dove portare chi arriva al suo indirizzo.
+(() => {
+  const dlg = $('#deldlg'), del = $('#del'), pick = $('#pick'), q = $('#pickq'), list = $('#picklist'), tid = $('#target_id'), picked = $('#picked'), err = $('#pickerr');
+  $('#delopen').onclick = () => dlg.showModal();
+  $('#delcancel').onclick = () => dlg.close();
+  del.addEventListener('change', e => { if (e.target.name === 'redirect') { pick.hidden = e.target.value !== 'post'; err.hidden = true; if (!pick.hidden) q.focus(); } });
+  let timer;
+  q.addEventListener('input', () => {
+    clearTimeout(timer);
+    timer = setTimeout(async () => {
+      const r = await fetch('/admin/suggest?except={{ post.id }}&q=' + encodeURIComponent(q.value.trim()));
+      const items = r.ok ? await r.json() : [];
+      list.textContent = '';
+      for (const it of items) {
+        const li = document.createElement('li'), b = document.createElement('button'), small = document.createElement('small');
+        b.type = 'button'; b.setAttribute('role', 'option'); b.textContent = it.title; small.textContent = (it.page ? 'Pagina · ' : '') + it.url;
+        b.append(small); li.append(b); list.append(li);
+        b.onclick = () => {
+          tid.value = it.id; picked.textContent = 'Destinazione: ' + it.title; picked.hidden = false; err.hidden = true;
+          list.querySelectorAll('button').forEach(x => x.setAttribute('aria-selected', x === b));
+        };
+      }
+      if (!items.length) { const li = document.createElement('li'); li.className = 'muted'; li.textContent = 'Nessun articolo o pagina online con queste parole nel titolo.'; list.append(li); }
+    }, 250);
+  });
+  del.addEventListener('submit', e => {
+    if (del.elements.redirect.value === 'post' && !tid.value) { e.preventDefault(); err.hidden = false; return; }
+    dirty = false;
+  });
+})();
+{% endif %}
+{% if post.id and not locked_by %}
+// Blocco dell'articolo: ogni 30 secondi l'editor dice «ci sono ancora». Se nel frattempo un'altra persona
+// è subentrata, i pulsanti di salvataggio si disattivano per non sovrascrivere il suo lavoro.
+(() => {
+  const url = '/admin/lock/{{ post.id }}';
+  let leaving = false;
+  form.addEventListener('submit', () => { leaving = true; });
+  const timer = setInterval(async () => {
+    try {
+      const r = await fetch(url, { method: 'POST' });
+      const j = r.ok ? await r.json() : {};
+      if (!j.taken_by) return;
+      clearInterval(timer);
+      const t = document.getElementById('taken');
+      t.textContent = j.taken_by + ' ha preso il controllo di questo articolo. Per non sovrascrivere il suo lavoro i pulsanti di salvataggio sono disattivati: se ti serve, copia il testo che hai scritto, poi ricarica la pagina.';
+      t.hidden = false; t.scrollIntoView({ block: 'center' });
+      form.querySelectorAll('button[name=status]').forEach(b => { b.disabled = true; });
+    } catch (e) {}
+  }, 30000);
+  // Chiudendo l'editor l'articolo si libera subito (altrimenti il blocco scade da solo dopo due minuti e mezzo).
+  addEventListener('pagehide', () => { if (!leaving) navigator.sendBeacon(url + '/release'); });
+})();
+{% endif %}
+</script>
+<style>#livebox [data-when]{display:none}#livebox[data-state="0"] [data-when="0"],#livebox[data-state="1"] [data-when="1"],#livebox[data-state="2"] [data-when="2"]{display:block}
+#livebox .lv-on,#livebox .lv-end{display:none}#livebox[data-state="1"] .lv-on,#livebox[data-state="2"] .lv-end{display:inline-block}#livebox[data-state="0"] #lv-list{display:none}</style>
+<script nonce="{{ csp_nonce }}">(() => { const box = document.getElementById('livebox'); if (!box) return; const id = box.dataset.id, list = document.getElementById('lv-list');
+  const send = (url, data) => fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded', Accept: 'application/json' }, body: new URLSearchParams(data) }).then(r => r.json()).catch(() => ({ ok: false, error: 'Collegamento non riuscito: riprova.' }));
+  box.addEventListener('click', async e => {
+    const st = e.target.closest('[data-live-state]');
+    if (st) { if (st.dataset.liveState === 'end' && !confirm('Chiudere la diretta? Potrai riaprirla.')) return; st.disabled = true;
+      const r = await send('/admin/edit/' + id + '/diretta/stato', { action: st.dataset.liveState }); st.disabled = false; if (r.ok) box.dataset.state = r.state; else alert(r.error); return; }
+    if (e.target.id === 'lv-add') { const b = document.getElementById('lv-body'), ti = document.getElementById('lv-title'), k = document.getElementById('lv-key'); if (!b.value.trim()) { b.focus(); return; }
+      e.target.disabled = true; const r = await send('/admin/edit/' + id + '/diretta', { title: ti.value, body: b.value, key: k.checked ? 'on' : '' }); e.target.disabled = false;
+      if (!r.ok) { alert(r.error); return; }
+      const li = document.createElement('li'), d = document.createElement('div'), w = document.createElement('strong'), del = document.createElement('button');
+      w.textContent = r.at + (k.checked ? ' · importante' : ''); del.type = 'button'; del.className = 'btn small ghost'; del.dataset.lvDel = r.id; del.textContent = 'Elimina'; d.append(w, del); li.append(d);
+      if (ti.value.trim()) { const p = document.createElement('p'), s = document.createElement('strong'); s.textContent = ti.value.trim(); p.append(s); li.append(p); }
+      const p = document.createElement('p'); p.textContent = b.value.trim(); li.append(p); list.prepend(li); b.value = ''; ti.value = ''; k.checked = false; return; }
+    const del = e.target.closest('[data-lv-del]'); if (del && confirm('Eliminare questo aggiornamento?')) { await send('/admin/diretta/' + del.dataset.lvDel + '/elimina', {}); del.closest('li').remove(); }
+  }); })();</script>
+{% endblock %}

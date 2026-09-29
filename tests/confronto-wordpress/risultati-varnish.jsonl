@@ -1,0 +1,23 @@
+{"label": "WordPress + Varnish", "enc": "gzip", "conc": 50, "path": "/", "rps": 36215.69, "avg_ms": 3.1, "p99_ms": 34.02, "timeouts": 0, "non2xx": 0, "requests": 362187}
+{"label": "WordPress + Nginx, cache FastCGI", "enc": "gzip", "conc": 50, "path": "/", "rps": 1257.62, "avg_ms": 39.63, "p99_ms": 54.47, "timeouts": 0, "non2xx": 0, "requests": 12584}
+{"label": "Presstatic + Nginx", "enc": "gzip", "conc": 50, "path": "/", "rps": 73934.05, "avg_ms": 0.55559, "p99_ms": 1.39, "timeouts": 0, "non2xx": 0, "requests": 739444}
+{"label": "WordPress + Varnish", "enc": "gzip", "conc": 50, "path": "/articolo-1000/", "rps": 35150.69, "avg_ms": 3.92, "p99_ms": 56.78, "timeouts": 0, "non2xx": 0, "requests": 351520}
+{"label": "WordPress + Nginx, cache FastCGI", "enc": "gzip", "conc": 50, "path": "/articolo-1000/", "rps": 1668.37, "avg_ms": 29.91, "p99_ms": 44.13, "timeouts": 0, "non2xx": 0, "requests": 16699}
+{"label": "Presstatic + Nginx", "enc": "gzip", "conc": 50, "path": "/articolo-1000/", "rps": 70288.29, "avg_ms": 1.06, "p99_ms": 2.8, "timeouts": 0, "non2xx": 0, "requests": 702999}
+{"label": "WordPress + Varnish", "enc": "br, gzip", "conc": 50, "path": "/", "rps": 33042.59, "avg_ms": 3.86, "p99_ms": 49.78, "timeouts": 0, "non2xx": 0, "requests": 330621}
+{"label": "WordPress + Nginx, cache FastCGI", "enc": "br, gzip", "conc": 50, "path": "/", "rps": 322.81, "avg_ms": 153.64, "p99_ms": 181.96, "timeouts": 0, "non2xx": 0, "requests": 3231}
+{"label": "Presstatic + Nginx", "enc": "br, gzip", "conc": 50, "path": "/", "rps": 68474.95, "avg_ms": 1.94, "p99_ms": 63.52, "timeouts": 0, "non2xx": 0, "requests": 685010}
+{"label": "WordPress + Varnish", "enc": "br, gzip", "conc": 50, "path": "/articolo-1000/", "rps": 34100.41, "avg_ms": 3.84, "p99_ms": 48.87, "timeouts": 0, "non2xx": 0, "requests": 341139}
+{"label": "WordPress + Nginx, cache FastCGI", "enc": "br, gzip", "conc": 50, "path": "/articolo-1000/", "rps": 434.66, "avg_ms": 114.32, "p99_ms": 133.27, "timeouts": 0, "non2xx": 0, "requests": 4354}
+{"label": "Presstatic + Nginx", "enc": "br, gzip", "conc": 50, "path": "/articolo-1000/", "rps": 73313.87, "avg_ms": 0.5995, "p99_ms": 1.84, "timeouts": 0, "non2xx": 0, "requests": 733335}
+{"label": "WordPress + Varnish", "enc": "gzip", "conc": 10, "path": "/", "rps": 35913.31, "avg_ms": 0.49539, "p99_ms": 5.2, "timeouts": 0, "non2xx": 0, "requests": 287363}
+{"label": "Presstatic + Nginx", "enc": "gzip", "conc": 10, "path": "/", "rps": 69248.58, "avg_ms": 0.13356, "p99_ms": 0.675, "timeouts": 0, "non2xx": 0, "requests": 560908}
+{"label": "WordPress + Varnish", "enc": "gzip", "conc": 200, "path": "/", "rps": 31027.23, "avg_ms": 130.17, "p99_ms": 1430.0, "timeouts": 71, "non2xx": 0, "requests": 248722}
+{"label": "Presstatic + Nginx", "enc": "gzip", "conc": 200, "path": "/", "rps": 72992.39, "avg_ms": 2.17, "p99_ms": 4.31, "timeouts": 0, "non2xx": 0, "requests": 587245}
+{"label": "WordPress + Varnish", "enc": "br, gzip", "conc": 10, "path": "/", "rps": 35765.91, "avg_ms": 0.43311, "p99_ms": 3.62, "timeouts": 0, "non2xx": 0, "requests": 289697}
+{"label": "Presstatic + Nginx", "enc": "br, gzip", "conc": 10, "path": "/", "rps": 68219.88, "avg_ms": 0.13743, "p99_ms": 0.721, "timeouts": 0, "non2xx": 0, "requests": 545785}
+{"label": "WordPress + Varnish", "enc": "br, gzip", "conc": 200, "path": "/", "rps": 32384.73, "avg_ms": 95.5, "p99_ms": 1480.0, "timeouts": 67, "non2xx": 0, "requests": 259489}
+{"label": "Presstatic + Nginx", "enc": "br, gzip", "conc": 200, "path": "/", "rps": 73374.37, "avg_ms": 2.16, "p99_ms": 4.04, "timeouts": 0, "non2xx": 0, "requests": 590205}
+{"label": "WordPress + Varnish, pagine fredde", "enc": "br, gzip", "conc": 50, "path": "archivio", "rps": 17.47, "avg_ms": 1000.0, "p99_ms": 1940.0, "timeouts": 139, "non2xx": 0, "requests": 175}
+{"label": "WordPress + Nginx, cache FastCGI, pagine fredde", "enc": "br, gzip", "conc": 50, "path": "archivio", "rps": 18.27, "avg_ms": 1060.0, "p99_ms": 2000.0, "timeouts": 147, "non2xx": 0, "requests": 183}
+{"label": "Presstatic + Nginx, pagine fredde", "enc": "br, gzip", "conc": 50, "path": "archivio", "rps": 77.61, "avg_ms": 467.74, "p99_ms": 1980.0, "timeouts": 98, "non2xx": 0, "requests": 778}

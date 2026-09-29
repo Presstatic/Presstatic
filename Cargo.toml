@@ -1,0 +1,46 @@
+[package]
+name = "presstatic"
+version = "1.0.0"
+edition = "2021"
+description = "CMS per siti di notizie che pubblica pagine HTML statiche"
+
+[dependencies]
+libc = "0.2"
+form_urlencoded = "1"
+zip = { version = "2", default-features = false, features = ["deflate"] }
+flate2 = "1"
+brotli = { version = "8", default-features = false, features = ["std"] }
+axum = { version = "0.8", features = ["multipart"] }
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "time", "io-util", "fs"] }
+minijinja = { version = "2", features = ["loader", "preserve_order", "urlencode"] }
+rusqlite = { version = "0.32", features = ["bundled", "backup"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = { version = "1", features = ["preserve_order"] }
+ureq = { version = "2", features = ["json"] }
+# analisi degli indirizzi (endpoint push): già usata da ureq, nessuna libreria nuova da compilare
+url = "2"
+argon2 = "0.5"
+password-hash = { version = "0.5", features = ["getrandom"] }
+jiff = "0.2"
+image = { version = "0.25", default-features = false, features = ["jpeg", "png", "gif", "webp"] }
+webp = { version = "0.3", default-features = false }
+ammonia = "4"
+pagefind = { version = "1.5", default-features = false }
+aho-corasick = "1"
+base64 = "0.22"
+ring = "0.17"
+# Email (recupero password, newsletter): SMTP con TLS, stessa crittografia (ring) già usata dal resto del programma
+lettre = { version = "0.11", default-features = false, features = ["smtp-transport", "builder", "hostname", "rustls", "ring", "webpki-roots", "pool"] }
+# Codice QR per collegare l'app di autenticazione (verifica in due passaggi)
+qrcode = { version = "0.14", default-features = false, features = ["svg"] }
+# Importazione da WordPress: lettura del file di esportazione (WXR) e conversione dei contenuti
+quick-xml = "0.41"
+# Backup: archivio .tar.gz del database e dei file
+tar = { version = "0.4", default-features = false }
+tokio-util = { version = "0.7", features = ["io"] }
+regex = { version = "1", default-features = false, features = ["std", "unicode-perl", "unicode-case"] }
+
+[profile.release]
+lto = true
+strip = true
+codegen-units = 1

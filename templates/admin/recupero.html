@@ -1,0 +1,37 @@
+{% extends "admin/base.html" %}
+{% block title %}Recupero della password | Presstatic{% endblock %}
+{% block nav %}{% endblock %}
+{% block main %}
+<div class="auth">
+  <div class="auth-card">
+    <div class="auth-brand">
+      <img src="/admin/assets/logo.webp" alt="Presstatic" width="190" height="49">
+      <div><h2>Nessun problema, succede.</h2></div>
+      <p>Ti mandiamo un link per scegliere una nuova password. Vale un'ora e si può usare una volta sola.</p>
+    </div>
+    {% if step == "new" %}
+    <form method="post" action="/admin/recupero/{{ token }}" class="auth-form">
+      <h1>Nuova password</h1>
+      <p class="sub">Almeno 12 caratteri. Una frase di quattro o cinque parole è facile da ricordare e difficile da indovinare.</p>
+      <label>Nuova password<input type="password" name="password" autocomplete="new-password" minlength="12" required autofocus></label>
+      <label>Ripeti la password<input type="password" name="password2" autocomplete="new-password" minlength="12" required></label>
+      <button class="btn wide">Salva la nuova password</button>
+      <p class="muted" style="margin:18px 0 0">Dopo il cambio esci da tutti i dispositivi su cui avevi fatto l'accesso.</p>
+    </form>
+    {% else %}
+    <form method="post" action="/admin/recupero" class="auth-form">
+      <h1>Password dimenticata</h1>
+      {% if mail_on %}
+      <p class="sub">Scrivi l'email con cui accedi al pannello: ti mandiamo il link per scegliere una nuova password.</p>
+      <label>Email<input type="email" name="email" autocomplete="username" required autofocus></label>
+      <button class="btn wide">Mandami il link</button>
+      {% else %}
+      <p class="msg info" style="margin:6px 0 16px">L'invio delle email non è ancora configurato su questo sito.</p>
+      <p class="sub">Chiedi a un amministratore di cambiarti la password dalla pagina Utenti, oppure di configurare le email in Integrazioni.</p>
+      {% endif %}
+      <p class="auth-link"><a href="/admin/login">Torna all'accesso</a></p>
+    </form>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

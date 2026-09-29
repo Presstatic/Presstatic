@@ -1,0 +1,39 @@
+[data-pb]{position:relative;outline:1px dashed transparent;outline-offset:-1px;transition:outline-color .12s}
+[data-pb="section"]:hover{outline-color:rgba(124,92,255,.55)}
+[data-pb="col"]:hover{outline-color:rgba(6,182,240,.6)}
+[data-pb="widget"]{cursor:grab}[data-pb="widget"]:hover{outline:1px solid rgba(30,107,255,.7)}
+.pbf-sel{outline:2px solid #1e6bff!important;outline-offset:-2px!important}
+.pbf-bar{position:absolute;z-index:9999;display:none;align-items:center;gap:2px;padding:3px;border-radius:8px 8px 8px 0;background:#1e6bff;color:#fff;font:600 12px/1 system-ui,sans-serif;box-shadow:0 6px 16px -6px rgba(0,0,0,.4)}
+.pbf-bar b{padding:0 8px}.pbf-bar button{border:0;background:rgba(255,255,255,.14);color:#fff;width:24px;height:22px;border-radius:5px;cursor:pointer;font:700 13px/1 system-ui}
+.pbf-bar button:hover{background:rgba(255,255,255,.3)}
+.pbf-ind{position:absolute;z-index:9998;display:none;height:4px;border-radius:2px;background:#1e6bff;box-shadow:0 0 0 3px rgba(30,107,255,.25);pointer-events:none}
+.pb-drop,.pb-empty{margin:0;padding:22px 12px;border:2px dashed #b9c8ea;border-radius:10px;text-align:center;color:#6b7a99;font:600 13px system-ui,sans-serif;background:rgba(238,243,255,.6)}
+
+/* Nell'anteprima non si scrive (i testi si cambiano nelle impostazioni): niente selezione del testo trascinando i widget,
+   e foto e link della pagina non si «afferrano» come file. */
+html, body { -webkit-user-select: none; user-select: none; }
+img, a { -webkit-user-drag: none; }
+
+/* Segnaposto dell'editor: immagine da scegliere, schede d'esempio, moduli d'esempio, anteprima dei doppioni */
+.pb-empty{display:flex;align-items:center;justify-content:center;gap:8px;min-height:64px;background:repeating-linear-gradient(135deg,rgba(238,243,255,.75) 0 10px,rgba(228,235,252,.75) 10px 20px)}
+.pb-note{margin:10px 0 0;font:600 12.5px/1.45 system-ui,sans-serif;color:#5b6b8f;text-align:center}
+.pb-ph-img{display:grid;justify-items:center;align-content:center;gap:6px;aspect-ratio:16/9;min-height:160px;border:2px dashed #9fb4e6;border-radius:12px;background:linear-gradient(160deg,#eef3ff,#e0e8fb);color:#1e6bff;cursor:pointer;text-align:center;font:600 13px system-ui,sans-serif;transition:background .15s,border-color .15s}
+.pb-ph-img:hover{border-color:#1e6bff;background:linear-gradient(160deg,#e4ecff,#d3e0fb)}.pb-ph-img strong{font-size:15px;color:#0b1f4d}.pb-ph-img span{color:#5b6b8f}
+.pb-skel{padding:4px 0}.pb-skel-grid{display:grid;grid-template-columns:repeat(var(--n,3),minmax(0,1fr));gap:16px}
+.pb-skel-card{display:grid;gap:8px}.pb-skel-card i{display:block;aspect-ratio:3/2;border-radius:10px;background:linear-gradient(100deg,#e3e8f2 40%,#eef2f8 50%,#e3e8f2 60%) 0 0/200% 100%;animation:pbsk 1.6s linear infinite}
+.pb-skel-card b{display:block;height:11px;border-radius:6px;background:#e3e8f2}.pb-skel-card b.s{width:55%}
+@keyframes pbsk{to{background-position:-200% 0}}@media (prefers-reduced-motion:reduce){.pb-skel-card i{animation:none}}
+.pb-mock{padding:18px;border:2px dashed #b9c8ea;border-radius:12px;background:rgba(238,243,255,.6);font:600 14px system-ui,sans-serif;color:#0b1f4d}
+.pb-mock-row{display:flex;gap:8px;margin-top:10px}.pb-mock-row span{flex:1;height:40px;border-radius:9px;background:#fff;border:1px solid #cdd8ef}.pb-mock-row b{width:110px;height:40px;border-radius:9px;background:#1e6bff;opacity:.85}
+.pb-ghost>*:not(.pb-note){opacity:.45}.pb-ghost>.pb-note{margin:0 0 8px;padding:6px 10px;border-radius:8px;background:#fff7e6;color:#8a5a00;text-align:left}
+/* Trascinamento: colonna di destinazione evidenziata, linea di rilascio con i pallini, widget in movimento in trasparenza */
+.pbf-over{outline:2px dashed #1e6bff!important;outline-offset:-2px!important;background-color:rgba(30,107,255,.06)!important}
+.pbf-moving{opacity:.4}
+.pbf-ind{height:4px;border-radius:4px;background:#1e6bff;box-shadow:0 0 0 4px rgba(30,107,255,.18)}
+.pbf-ind::before,.pbf-ind::after{content:"";position:absolute;top:50%;width:12px;height:12px;margin-top:-6px;border-radius:50%;background:#fff;border:3px solid #1e6bff;box-sizing:border-box}
+.pbf-ind::before{left:-6px}.pbf-ind::after{right:-6px}
+.pb-drop{display:flex;align-items:center;justify-content:center;gap:8px}.pb-drop::before{content:"+";display:grid;place-items:center;width:24px;height:24px;border-radius:50%;background:#1e6bff;color:#fff;font:700 16px/1 system-ui}
+
+/* Parti scrivibili: tratteggio al passaggio sul widget scelto, bordo azzurro mentre si scrive */
+.pbf-sel [data-pb-edit]:hover{outline:1px dashed #1e6bff;outline-offset:3px;cursor:text}
+.pbf-editing,[contenteditable]{-webkit-user-select:text!important;user-select:text!important;cursor:text!important;outline:2px solid #06b6f0!important;outline-offset:3px!important;border-radius:3px}

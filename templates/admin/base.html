@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>{% block title %}Presstatic{% endblock %}</title>
+<link rel="icon" href="/admin/assets/favicon.png">
+<link rel="preload" href="/admin/assets/jakarta.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/admin/assets/admin.css?v={{ asset_v }}">
+</head>
+<body>
+{% import "admin/icons.html" as ic %}
+<div class="app">
+{% block nav %}
+<header class="topbar">
+  <a href="/admin"><img src="/admin/assets/logo.webp" alt="Presstatic" width="116" height="30"></a>
+  <button type="button" id="navbtn" aria-controls="sidenav" aria-expanded="false" aria-label="Apri il menu">{{ ic.i("menu", 22) }}</button>
+</header>
+<aside class="side-nav" id="sidenav">
+  <a class="brand" href="/admin"><img src="/admin/assets/logo.webp" alt="Presstatic" width="172" height="45"></a>
+  <a class="new-btn" href="/admin/edit/0">{{ ic.i("nuovo", 20) }}Nuovo articolo</a>
+  <nav aria-label="Menu del pannello">
+    <p class="group">Contenuti</p>
+    <a href="/admin" data-match="^/admin(/edit/|/revision/)(?!.*k=page)|^/admin(\?(?!.*k=page).*)?$">{{ ic.i("articoli") }}Articoli{% if pending %} <span class="badge" title="Articoli da rivedere">{{ pending }}</span>{% endif %}</a>
+    {% if me.role in ["admin", "editor"] %}<a href="/admin?k=page" data-match="k=page">{{ ic.i("pagine") }}Pagine</a>{% endif %}
+    <a href="/admin/media" data-match="^/admin/media">{{ ic.i("immagine") }}Media</a>
+    {% if me.role in ["admin", "editor"] %}<a href="/admin/categorie" data-match="^/admin/categorie">{{ ic.i("etichetta") }}Categorie</a>{% endif %}
+    {% if me.role in ["admin", "editor"] %}<a href="/admin/commenti" data-match="^/admin/commenti">{{ ic.i("documento") }}Commenti{% if to_moderate %}<span class="count">{{ to_moderate }}</span>{% endif %}</a>{% endif %}
+    {% if me.role in ["admin", "editor"] %}<a href="/admin/moduli" data-match="^/admin/moduli">{{ ic.i("posta") }}Moduli{% if forms_unread %}<span class="count">{{ forms_unread }}</span>{% endif %}</a>{% endif %}
+    <a href="/admin/ai" class="ai" data-match="^/admin/ai">{{ ic.i("ia") }}Scrivi con l'IA</a>
+    {% if me.role == "admin" %}
+    <p class="group">Sito</p>
+    <a href="/admin/settings" data-match="^/admin/settings">{{ ic.i("impostazioni") }}Impostazioni</a>
+    <a href="/admin/integrations" data-match="^/admin/integrations">{{ ic.i("integrazioni") }}Integrazioni</a>
+    <a href="/admin/indicizzazione" data-match="^/admin/indicizzazione">{{ ic.i("globo") }}Indicizzazione rapida</a>
+    <a href="/admin/files" data-match="^/admin/files">{{ ic.i("file") }}File</a>
+    {% if me.role == "admin" %}<a href="/admin/aspetto" data-match="^/admin/aspetto">{{ ic.i("immagine") }}Aspetto</a>{% endif %}
+    <a href="/admin/builder" data-match="^/admin/builder">{{ ic.i("griglia") }}Costruisci il sito</a>
+    <a href="/admin/newsletter" data-match="^/admin/newsletter">{{ ic.i("posta") }}Newsletter</a>
+    <a href="/admin/push" data-match="^/admin/push">{{ ic.i("campanella") }}Notifiche push</a>
+    <a href="/admin/importa" data-match="^/admin/importa">{{ ic.i("carica") }}Importa da WordPress</a>
+    <a href="/admin/backup" data-match="^/admin/backup">{{ ic.i("scudo") }}Backup</a>
+    <a href="/admin/users" data-match="^/admin/users(?!/{{ me.id }}$)">{{ ic.i("utenti") }}Utenti</a>
+    <a href="/admin/update" data-match="^/admin/update">{{ ic.i("aggiornamenti") }}Aggiornamenti{% if update %} <span class="badge" title="Aggiornamento disponibile">1</span>{% endif %}</a>
+    {% endif %}
+  </nav>
+  <div class="me">
+    <div class="me-who">
+      {% if me.photo %}<img class="avatar" src="{{ me.photo }}" alt="">{% else %}<span class="avatar">{{ me.name[:1]|upper }}</span>{% endif %}
+      <div style="min-width:0"><strong>{{ me.name }}</strong><span>{{ {"admin": "Amministratore", "editor": "Redattore", "author": "Autore"}[me.role] or me.role }}</span></div>
+    </div>
+    <div class="me-actions">
+      <a href="/admin/profile" data-match="^/admin/(profile|users/{{ me.id }})$">{{ ic.i("profilo", 17) }}Il mio profilo</a>
+      <form method="post" action="/admin/logout"><button class="link">{{ ic.i("esci", 17) }}Esci</button></form>
+    </div>
+  </div>
+</aside>
+<div class="scrim" id="scrim"></div>
+{% endblock %}
+<main class="content"><div class="content-in">
+{% if msg %}<p class="msg{% if 'rror' in msg or 'non ' in msg or 'Non ' in msg %} err{% endif %}" role="status">{{ msg }}</p>{% endif %}
+{% block main %}{% endblock %}
+</div></main>
+</div>
+<script nonce="{{ csp_nonce }}">
+// Azioni dei pulsanti, senza gestori scritti nei tag (la CSP con nonce non li esegue): conferme, copia, stampa, invio.
+document.addEventListener('click', e => {
+  const c = e.target.closest('button[data-confirm], a[data-confirm]');
+  if (c && !confirm(c.dataset.confirm)) { e.preventDefault(); e.stopImmediatePropagation(); return; }
+  const p = e.target.closest('[data-pick]');
+  if (p) document.querySelectorAll('#cform input[name=ids]').forEach(x => { x.checked = x.value === p.dataset.pick; });
+  if (e.target.closest('[data-print]')) print();
+  const k = e.target.closest('[data-copy-codes]');
+  if (k) navigator.clipboard.writeText([...document.querySelectorAll('#codes code')].map(x => x.textContent).join('\n')).then(() => { k.textContent = 'Copiati'; });
+}, true);
+document.addEventListener('submit', e => {
+  const f = e.target;
+  if (f.dataset.confirm && !confirm(f.dataset.confirm)) { e.preventDefault(); return; }
+  if (f.dataset.busy) { const b = f.querySelector('button'); if (b) { b.disabled = true; b.textContent = f.dataset.busy; } }
+});
+
+(() => {
+  // Voce attiva del menu e menu a scomparsa sui telefoni.
+  const here = location.pathname + location.search;
+  document.querySelectorAll('.side-nav [data-match]').forEach(a => { if (new RegExp(a.dataset.match).test(here)) { a.classList.add('on'); a.setAttribute('aria-current', 'page'); } });
+  const b = document.getElementById('navbtn'), s = document.getElementById('scrim');
+  if (!b) return;
+  const set = o => { document.body.classList.toggle('nav-open', o); b.setAttribute('aria-expanded', o); };
+  b.addEventListener('click', () => set(!document.body.classList.contains('nav-open')));
+  s.addEventListener('click', () => set(false));
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') set(false); });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,76 @@
+{% extends "admin/base.html" %}
+{% block title %}Importa da WordPress | Presstatic{% endblock %}
+{% block main %}
+{% import "admin/icons.html" as ic %}
+<header class="page-head">
+  <div><h1>Importa da WordPress</h1><p class="sub">Porta qui articoli, pagine, autori, categorie, tag e immagini del vecchio sito, con i reindirizzamenti dai vecchi indirizzi. Il sito WordPress non viene toccato.</p></div>
+</header>
+<div class="grid">
+  <div>
+    <div class="panel" id="progress"{% if not state.running and not state.finished %} hidden{% endif %}>
+      <h2><span class="hic">{{ ic.i("aggiornamenti") }}</span><span id="phase">{{ state.phase }}</span></h2>
+      <div class="bar-out"><div class="bar-in" id="bar"></div></div>
+      <dl class="imp-stats">
+        <div><dt>Articoli</dt><dd id="s-posts">{{ state.posts }}</dd></div>
+        <div><dt>Pagine</dt><dd id="s-pages">{{ state.pages }}</dd></div>
+        <div><dt>Immagini</dt><dd id="s-images">{{ state.images }}</dd></div>
+        <div><dt>Autori nuovi</dt><dd id="s-users">{{ state.users }}</dd></div>
+        <div><dt>Reindirizzamenti</dt><dd id="s-redirects">{{ state.redirects }}</dd></div>
+        <div><dt>Già importati</dt><dd id="s-skipped">{{ state.skipped }}</dd></div>
+      </dl>
+      <div id="done-box"{% if not state.finished %} hidden{% endif %}><p class="msg">Fatto. Controlla qualche articolo, poi indica il nuovo server nel DNS del dominio: i vecchi indirizzi porteranno da soli a quelli nuovi.</p><a class="btn" href="/admin">{{ ic.i("articoli", 18) }}Vai agli articoli</a></div>
+      <details id="err-box"{% if not state.errors %} hidden{% endif %}><summary><strong>Avvisi</strong> <span class="muted" id="err-n">{{ state.errors|length }}</span></summary><ul class="imp-err" id="errs">{% for e in state.errors %}<li>{{ e }}</li>{% endfor %}</ul></details>
+    </div>
+    <form class="panel" method="post" action="/admin/importa" enctype="multipart/form-data" id="impform"{% if state.running %} hidden{% endif %}>
+      <h2><span class="hic">{{ ic.i("carica") }}</span>File di esportazione</h2>
+      <ol class="steps">
+        <li>Nel vecchio sito apri <strong>Strumenti &gt; Esporta</strong>, scegli <strong>Tutti i contenuti</strong> e premi <strong>Scarica il file di esportazione</strong>: è un file .xml.</li>
+        <li>Lascia il vecchio sito online finché l'importazione non finisce: le immagini si scaricano da lì.</li>
+        <li>Carica il file qui sotto e premi <strong>Importa</strong>. Puoi chiudere la pagina: l'importazione continua sul server.</li>
+      </ol>
+      <label style="margin-top:18px">File .xml<input type="file" name="wxr" accept=".xml,text/xml,application/xml" required></label>
+      <label class="choice"><input type="checkbox" name="images" checked><span><strong>Scarica le immagini dal vecchio sito</strong><small>Diventano WebP in più misure ed entrano nella libreria, con testo alternativo e didascalia. Senza, gli articoli continuano a mostrarle dal vecchio sito.</small></span></label>
+      <label class="choice"><input type="checkbox" name="authors" checked><span><strong>Crea gli autori</strong><small>Ogni autore di WordPress diventa un utente con ruolo Autore (chi ha già un account con la stessa email lo mantiene) e sceglie la password con «Password dimenticata?». Senza, gli articoli sono firmati da te.</small></span></label>
+      <button class="btn">{{ ic.i("carica", 18) }}Importa</button>
+    </form>
+  </div>
+  <div class="side">
+    <div class="panel">
+      <h2><span class="hic">{{ ic.i("info") }}</span>Cosa viene portato</h2>
+      <ul class="imp-list">
+        <li><strong>Articoli e pagine</strong>, compresi bozze, articoli in revisione e programmati. Quelli nel cestino no.</li>
+        <li><strong>Testo</strong> dall'editor a blocchi e da quello classico: titoletti, elenchi, citazioni, foto con didascalia, gallerie, video di YouTube e Vimeo.</li>
+        <li><strong>Categoria e tag.</strong> Se un articolo ha più categorie vale quella principale di Yoast, altrimenti la prima.</li>
+        <li><strong>Foto in evidenza</strong> e descrizione SEO di Yoast, se il sommario è vuoto.</li>
+        <li><strong>Vecchi indirizzi</strong> come /2024/05/12/titolo/: portano da soli ai nuovi. Gli indirizzi uguali (/titolo/) restano gli stessi.</li>
+      </ul>
+      <p class="muted" style="margin:0">Rifare l'importazione con lo stesso file non crea doppioni: gli articoli già importati vengono saltati.</p>
+    </div>
+  </div>
+</div>
+<style>
+.bar-out{height:12px;border-radius:999px;background:#eef2fa;overflow:hidden;margin:4px 0 18px}
+.bar-in{height:100%;width:0;border-radius:999px;background:var(--grad);transition:width .4s ease}
+.imp-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:0 0 18px}
+.imp-stats div{padding:12px 14px;border-radius:14px;background:#f7f9fd;border:1px solid var(--line)}
+.imp-stats dt{font-size:12.5px;color:var(--muted);font-weight:700}
+.imp-stats dd{margin:2px 0 0;font-size:24px;font-weight:800;color:var(--ink)}
+.imp-err{font-size:13px;display:grid;gap:6px;max-height:260px;overflow:auto;padding-left:18px}
+.imp-list{margin:0 0 14px;padding-left:18px;display:grid;gap:10px;font-size:14px;color:var(--text)}
+@media (max-width:640px){.imp-stats{grid-template-columns:1fr 1fr}}
+</style>
+<script nonce="{{ csp_nonce }}">
+(() => {
+  const $ = s => document.querySelector(s);
+  async function tick() {
+    const s = await (await fetch('/admin/importa/stato')).json();
+    $('#phase').textContent = s.phase || '…';
+    $('#bar').style.width = (s.total ? Math.round(100 * s.done / s.total) : (s.finished ? 100 : 3)) + '%';
+    for (const k of ['posts', 'pages', 'images', 'users', 'redirects', 'skipped']) $('#s-' + k).textContent = s[k];
+    if (s.errors.length) { $('#err-box').hidden = false; $('#err-n').textContent = s.errors.length; $('#errs').innerHTML = ''; s.errors.forEach(e => { const li = document.createElement('li'); li.textContent = e; $('#errs').append(li); }); }
+    if (s.running) setTimeout(tick, 1500); else if (s.finished) { $('#done-box').hidden = false; $('#impform').hidden = false; }
+  }
+  if (!$('#progress').hidden) tick();
+})();
+</script>
+{% endblock %}

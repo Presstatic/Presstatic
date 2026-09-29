@@ -1,0 +1,23 @@
+# Copia in /etc/systemd/system/presstatic.service, poi:
+#   systemctl daemon-reload && systemctl enable --now presstatic
+[Unit]
+Description=Presstatic
+After=network.target
+
+[Service]
+User=presstatic
+Group=presstatic
+WorkingDirectory=/var/www/presstatic
+Environment=PRESSTATIC_ADDR=127.0.0.1:8080
+ExecStart=/var/www/presstatic/bin/presstatic
+Restart=always
+RestartSec=2
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/www/presstatic
+UMask=0022
+
+[Install]
+WantedBy=multi-user.target
