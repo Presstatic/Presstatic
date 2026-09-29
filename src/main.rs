@@ -463,6 +463,7 @@ async fn main() {
         .route("/admin/recupero/{token}", get(reset_form).post(reset).layer(DefaultBodyLimit::max(4 * 1024)))
         .route("/admin/setup", get(setup_form).post(setup_save))
         .route("/admin/assets/{file}", get(editor_asset))
+        .route("/admin/assets/{ver}/{file}", get(editor_asset_v))
         .fallback(static_file)
         .layer(DefaultBodyLimit::max(25 * 1024 * 1024))
         .layer(middleware::from_fn(same_origin))
@@ -1372,10 +1373,10 @@ async fn builder_frame(State(app): S, Extension(me): Me, Query(q): Msg) -> Respo
     let a = app.clone();
     match tokio::task::spawn_blocking(move || site::builder_preview(&a, &doc, true, &name)).await.unwrap() {
         Ok(html) => {
-            let tools = "<link rel=\"stylesheet\" href=\"/admin/assets/pb-frame.css\"><script src=\"/admin/assets/pb-frame.js\" defer></script></body>";
+            let tools = format!("<link rel=\"stylesheet\" href=\"/admin/assets/{v}/pb-frame.css\"><script src=\"/admin/assets/{v}/pb-frame.js\" defer></script></body>", v = update::VERSION);
             // L'anteprima è sul dominio del pannello: qui può girare SOLO lo script dell'editor (servito dal pannello).
             // Script del tema, annunci, statistiche o codice incollato non partono: avrebbero i privilegi dell'amministratore.
-            ([(header::CONTENT_SECURITY_POLICY, "script-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'")], Html(html.replacen("</body>", tools, 1))).into_response()
+            ([(header::CONTENT_SECURITY_POLICY, "script-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'")], Html(html.replacen("</body>", &tools, 1))).into_response()
         }
         Err(e) => (StatusCode::INTERNAL_SERVER_ERROR, e).into_response(),
     }
@@ -1518,7 +1519,7 @@ async fn appearance_page(State(app): S, Extension(me): Me, Query(q): Msg) -> Res
     let st = app.settings();
     let list: Vec<serde_json::Value> = themes().into_iter().map(|(id, label)| {
         let (name, desc) = label.split_once(':').map(|(a, b)| (a.trim().to_string(), b.trim().to_string())).unwrap_or((label.clone(), String::new()));
-        let preview = if THEMES.iter().any(|t| t.0 == id) { format!("/admin/assets/tema-{id}.webp?v={}", update::VERSION) } else { String::new() };
+        let preview = if THEMES.iter().any(|t| t.0 == id) { format!("/admin/assets/{}/tema-{id}.webp", update::VERSION) } else { String::new() };
         serde_json::json!({"id": id, "name": name, "desc": desc, "preview": preview})
     }).collect();
     admin(&app, &me, "admin/aspetto.html", context! { themes => list, theme => opt(&st, "theme", "classico"), accent => opt(&st, "accent", ""), color_mode => opt(&st, "color_mode", "auto"),
@@ -2631,6 +2632,14 @@ fn index_search(app: &App) -> R<usize> {
 }
 
 // Editor visuale (Quill 2, licenza BSD) incluso nel binario: il pannello non dipende da CDN esterne.
+/// I file del pannello con la versione nel percorso (/admin/assets/1.0.4/admin.css): a ogni versione cambia l'indirizzo,
+/// quindi browser e Cloudflare li riscaricano anche con «Ignore query string», e fino ad allora li possono tenere un anno.
+async fn editor_asset_v(Path((_ver, file)): Path<(String, String)>) -> Response {
+    let mut r = editor_asset(Path(file)).await;
+    if r.status().is_success() { r.headers_mut().insert(header::CACHE_CONTROL, header::HeaderValue::from_static("public, max-age=31536000, immutable")); }
+    r
+}
+
 async fn editor_asset(Path(file): Path<String>) -> Response {
     let (ct, body): (&str, &[u8]) = match file.as_str() {
         "quill.js" => ("text/javascript", include_bytes!("../assets/editor/quill.js")),

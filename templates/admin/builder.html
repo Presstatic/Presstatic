@@ -108,5 +108,5 @@ body:has(.pb-app){overflow:hidden}
   const show = t => { tabs.forEach(b => { b.classList.toggle('on', b.dataset.tab === t); b.setAttribute('aria-selected', b.dataset.tab === t); }); panes.forEach(p => p.classList.toggle('off', p.dataset.pane !== t)); };
   tabs.forEach(b => b.addEventListener('click', () => show(b.dataset.tab)));
   new MutationObserver(() => show(props.querySelector('input,select,textarea') ? 'p' : 'w')).observe(props, { childList: true }); }</script>
-<script src="/admin/assets/pb-editor.js?v={{ asset_v }}" defer></script>
+<script src="/admin/assets/{{ asset_v }}/pb-editor.js" defer></script>
 {% endblock %}
