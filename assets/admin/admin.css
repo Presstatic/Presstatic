@@ -34,24 +34,24 @@ code{font:600 .84em/1.4 ui-monospace,SFMono-Regular,Menlo,monospace;background:#
 :focus-visible{outline:none;box-shadow:var(--ring)}
 
 /* ---------- struttura: barra laterale e contenuto ---------- */
-.side-nav{position:fixed;inset:0 auto 0 0;width:var(--side);z-index:40;display:flex;flex-direction:column;gap:6px;padding:22px 16px 16px;color:#c3cdea;overflow-y:auto;
+.side-nav{position:relative;grid-column:1;grid-row:1;min-height:100vh;width:var(--side);z-index:40;display:flex;flex-direction:column;gap:6px;padding:22px 16px 16px;color:#c3cdea;
   background:radial-gradient(120% 55% at 0% 0%,rgba(30,107,255,.34),transparent 62%),radial-gradient(90% 40% at 100% 100%,rgba(124,92,255,.22),transparent 70%),linear-gradient(180deg,#0a1233 0%,#0d1947 55%,#0a1233 100%)}
-.brand{display:block;padding:2px 10px 14px}
+.brand{display:block;padding:2px 10px 18px}
 .brand img{display:block;width:172px;height:auto}
 .new-btn{display:flex;align-items:center;justify-content:center;gap:10px;height:46px;margin:0 2px 10px;border-radius:13px;background:var(--grad);color:#fff;font-weight:800;font-size:15px;text-decoration:none;
   box-shadow:0 14px 26px -14px rgba(30,107,255,.95),inset 0 1px 0 rgba(255,255,255,.25);transition:transform .15s ease,filter .15s ease}
 .new-btn:hover{color:#fff;filter:brightness(1.07);transform:translateY(-1px)}
 .side-nav nav{display:flex;flex-direction:column;gap:2px}
-.side-nav .group{margin:15px 12px 5px;font-size:12px;font-weight:700;color:#7d89b3;letter-spacing:.01em}
-.side-nav nav a{position:relative;display:flex;align-items:center;gap:12px;padding:7.5px 12px;border-radius:11px;color:#c3cdea;text-decoration:none;font-weight:600;font-size:14.5px;transition:background .15s ease,color .15s ease}
+.side-nav .group{margin:18px 12px 6px;font-size:12px;font-weight:700;color:#7d89b3;letter-spacing:.01em}
+.side-nav nav a{position:relative;display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:11px;color:#c3cdea;text-decoration:none;font-weight:600;font-size:14.5px;transition:background .15s ease,color .15s ease}
 .side-nav nav a .ic{opacity:.8}
 .side-nav nav a:hover{background:rgba(255,255,255,.06);color:#fff}
 .side-nav nav a.on{color:#fff;background:linear-gradient(90deg,rgba(30,107,255,.34),rgba(6,182,240,.1));box-shadow:inset 0 0 0 1px rgba(125,165,255,.22)}
 .side-nav nav a.on .ic{opacity:1;color:#8fd8ff}
-.side-nav nav a.on::before{content:"";position:absolute;left:-16px;top:8px;bottom:8px;width:4px;border-radius:0 4px 4px 0;background:linear-gradient(180deg,#06b6f0,#1e6bff)}
+.side-nav nav a.on::before{content:"";position:absolute;left:-16px;top:9px;bottom:9px;width:4px;border-radius:0 4px 4px 0;background:linear-gradient(180deg,#06b6f0,#1e6bff)}
 .side-nav nav a.ai .ic{color:#b7a6ff}
 .side-nav .badge{margin-left:auto}
-.me{margin-top:auto;padding:14px 8px 4px;border-top:1px solid rgba(255,255,255,.08);display:grid;gap:10px}
+.me{margin-top:22px;padding:14px 8px 4px;border-top:1px solid rgba(255,255,255,.08);display:grid;gap:10px}
 .me-who{display:flex;align-items:center;gap:11px;min-width:0}
 .me-who .avatar{width:38px;height:38px;flex:none;box-shadow:0 0 0 2px rgba(255,255,255,.12)}
 .me-who strong{display:block;color:#fff;font-size:14px;line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -61,7 +61,9 @@ code{font:600 .84em/1.4 ui-monospace,SFMono-Regular,Menlo,monospace;background:#
 .me-actions a:hover,.me-actions button:hover{background:rgba(255,255,255,.1);color:#fff}
 .me-actions form{flex:1;display:flex;margin:0}
 
-.content{margin-left:var(--side);min-height:100vh;padding:34px 44px 72px}
+.app{display:grid;grid-template-columns:var(--side) minmax(0,1fr)} /* come WordPress: la barra fa parte della pagina e scorre con lei, senza scorrimento suo */
+.app:not(:has(.side-nav)){display:block}
+.content{grid-column:2;grid-row:1;min-width:0;min-height:100vh;padding:34px 44px 72px}
 .content-in{max-width:1240px;margin:0 auto}
 .app:not(:has(.side-nav)) .content{margin-left:0}
 
@@ -75,6 +77,8 @@ code{font:600 .84em/1.4 ui-monospace,SFMono-Regular,Menlo,monospace;background:#
   .side-nav{transform:translateX(-100%);transition:transform .22s ease;box-shadow:24px 0 60px -20px rgba(0,0,0,.5)}
   body.nav-open .side-nav{transform:none}
   body.nav-open .scrim{display:block;position:fixed;inset:0;z-index:35;background:rgba(6,12,36,.5)}
+  .app{display:block}
+  .side-nav{position:fixed;inset:0 auto 0 0;min-height:0;overflow-y:auto}
   .content{margin-left:0;padding:22px 16px 56px}
 }
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
@@ -229,13 +233,6 @@ td strong{color:var(--ink)}
 .code-in{font:800 30px/1 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.35em;text-align:center;padding:14px 10px}
 .auth-steps{margin:0 0 22px;padding:0;list-style:none;display:grid;gap:10px}
 
-/* 1080 px a tutto schermo e poco meno: voci appena più strette, così con tutte le voci del menu non scorre */
-@media (max-height:1100px){.side-nav nav a{padding:6.5px 12px}}
-/* schermi meno alti (Chrome ingrandito con schede e preferiti, portatili): solo gli spazi si stringono, così la barra
-   laterale sta tutta nello schermo senza scorrere; caratteri, icone e colori restano gli stessi */
-@media (max-height:1000px){.side-nav{gap:4px;padding-top:18px}.side-nav nav{gap:0}.side-nav nav a{padding:5px 12px}.side-nav nav a.on::before{top:7px;bottom:7px}
-  .side-nav .group{margin:11px 12px 4px}.brand{padding-bottom:10px}.new-btn{margin-bottom:6px}.me{padding-top:10px;gap:8px}}
-@media (max-height:880px){.side-nav nav a{padding:4.5px 12px}.side-nav nav a.on::before{top:6px;bottom:6px}.side-nav .group{margin:9px 12px 3px}.new-btn{height:42px}}
 
 /* segreti già salvati: pallini solo grafici (il campo resta vuoto, e vuoto vuol dire «mantieni quello salvato») */
 .secret-saved::placeholder{color:#1a2233;opacity:.6;letter-spacing:.16em}

@@ -580,7 +580,9 @@ async fn security_headers(req: Request, next: Next) -> Response {
         None => Some("frame-ancestors 'self'; object-src 'none'; base-uri 'self'; form-action 'self'".to_string()),
     };
     if let Some(v) = csp.and_then(|c| header::HeaderValue::from_str(&c).ok()) { h.insert(header::CONTENT_SECURITY_POLICY, v); }
-    for (k, v) in [(header::X_FRAME_OPTIONS, "SAMEORIGIN"), (header::X_CONTENT_TYPE_OPTIONS, "nosniff"), (header::REFERRER_POLICY, "same-origin")] {
+    // Nulla di ciò che risponde il programma va nei motori di ricerca: il pannello e le pagine del sito viste
+    // dall'indirizzo del pannello (per l'anteprima) sarebbero copie del sito vero, che serve Nginx.
+    for (k, v) in [(header::X_FRAME_OPTIONS, "SAMEORIGIN"), (header::X_CONTENT_TYPE_OPTIONS, "nosniff"), (header::REFERRER_POLICY, "same-origin"), (header::HeaderName::from_static("x-robots-tag"), "noindex, nofollow")] {
         if !h.contains_key(&k) { h.insert(k, header::HeaderValue::from_static(v)); }
     }
     r
@@ -2653,6 +2655,8 @@ async fn editor_asset(Path(file): Path<String>) -> Response {
 // Serve la cartella public solo per l'anteprima in locale: in produzione lo fa Nginx o Apache.
 async fn static_file(State(app): S, uri: Uri) -> Response {
     let p = uri.path();
+    // La radice dell'indirizzo del pannello (admin.dominio/) porta all'accesso, non a una copia della home del sito.
+    if p == "/" { return Redirect::to("/admin").into_response() }
     let mut path = app.public.join(p.trim_start_matches('/'));
     if p.ends_with('/') { path.push("index.html") }
     let ct = match path.extension().and_then(|e| e.to_str()).unwrap_or("") {
