@@ -23,7 +23,7 @@
   <nav aria-label="Menu del pannello">
     <p class="group">Contenuti</p>
     <a href="/admin" data-match="^/admin(/edit/|/revision/)(?!.*k=page)|^/admin(\?(?!.*k=page).*)?$">{{ ic.i("articoli") }}Articoli{% if pending %} <span class="badge" title="Articoli da rivedere">{{ pending }}</span>{% endif %}</a>
-    {% if me.role in ["admin", "editor"] %}<a href="/admin?k=page" data-match="k=page">{{ ic.i("pagine") }}Pagine</a>{% endif %}
+    {% if me.role in ["admin", "editor"] %}<a href="/admin/pagine" data-match="^/admin/pagine">{{ ic.i("pagine") }}Pagine</a>{% endif %}
     <a href="/admin/media" data-match="^/admin/media">{{ ic.i("immagine") }}Media</a>
     {% if me.role in ["admin", "editor"] %}<a href="/admin/categorie" data-match="^/admin/categorie">{{ ic.i("etichetta") }}Categorie</a>{% endif %}
     {% if me.role in ["admin", "editor"] %}<a href="/admin/commenti" data-match="^/admin/commenti">{{ ic.i("documento") }}Commenti{% if to_moderate %}<span class="count">{{ to_moderate }}</span>{% endif %}</a>{% endif %}

@@ -109,7 +109,7 @@ fieldset.multi legend small{display:block;font-weight:500;color:var(--muted);mar
 @media (max-width:640px){.writer{padding:22px 18px}.ql-toolbar.ql-snow{margin:0 -18px;padding:8px 18px}}
 </style>
 <div class="ed-head">
-  <a class="back" href="/admin{% if page %}?k=page{% endif %}">{{ ic.i("indietro", 16) }}{{ "Pagine" if page else "Articoli" }}</a>
+  <a class="back" href="{{ "/admin/pagine" if page else "/admin" }}">{{ ic.i("indietro", 16) }}{{ "Pagine" if page else "Articoli" }}</a>
   <div class="ed-links">
     {% if post.id %}<a href="/admin/preview/{{ post.id }}" target="_blank" rel="noopener">{{ ic.i("occhio", 16) }}Anteprima</a>{% endif %}
     {% if post.id and post.status == "published" %}<a href="{{ url }}" target="_blank" rel="noopener">{{ ic.i("esterno", 16) }}Apri sul sito</a>{% endif %}
@@ -123,7 +123,7 @@ fieldset.multi legend small{display:block;font-weight:500;color:var(--muted);mar
     <h2 id="lw-t">{{ locked_by }} sta modificando {{ "questa pagina" if page else "questo articolo" }}</h2>
     <p class="muted">Il suo editor ha dato segnale {{ "pochi secondi fa" if locked_secs < 60 else "circa " ~ (locked_secs // 60) ~ " minuti fa" }}. Se subentri, {{ locked_by }} viene avvisato e i suoi pulsanti di salvataggio si disattivano, così nessuno dei due sovrascrive il lavoro dell'altro.</p>
     <div class="row">
-      <a class="btn ghost" href="/admin{% if page %}?k=page{% endif %}">{{ ic.i("indietro", 17) }}Torna all'elenco</a>
+      <a class="btn ghost" href="{{ "/admin/pagine" if page else "/admin" }}">{{ ic.i("indietro", 17) }}Torna all'elenco</a>
       <a class="btn ghost" href="/admin/preview/{{ post.id }}" target="_blank" rel="noopener">{{ ic.i("occhio", 17) }}Anteprima</a>
       <form method="post" action="/admin/lock/{{ post.id }}/take"><button class="btn">Subentra</button></form>
     </div>

@@ -368,6 +368,8 @@ async fn main() {
     let admin = Router::new()
         .route("/admin", get(posts))
         .route("/admin/edit/{id}", get(edit_form).post(save))
+        .route("/admin/pagine", get(pages))
+        .route("/admin/pagine/nuova", get(page_new))
         .route("/admin/delete/{id}", post(delete))
         .route("/admin/suggest", get(suggest))
         .route("/admin/bulk", post(bulk))
@@ -1117,7 +1119,25 @@ async fn read_form(mut mp: Multipart) -> (HashMap<String, String>, Vec<(String, 
     (fields, files)
 }
 
+/// Le pagine hanno il loro indirizzo, /admin/pagine: è l'elenco degli articoli filtrato, senza ?k=page nell'indirizzo.
+async fn pages(State(app): S, Extension(me): Me, Query(mut q): Msg) -> Response {
+    if !me.editor() { return Redirect::to("/admin").into_response() }
+    q.insert("k".into(), "page".into());
+    q.insert("_pagine".into(), "1".into());
+    posts(State(app), Extension(me), Query(q)).await
+}
+
+async fn page_new(State(app): S, Extension(me): Me, Query(mut q): Msg) -> Response {
+    q.insert("k".into(), "page".into());
+    edit_form(State(app), Extension(me), Path(0), Query(q)).await
+}
+
 async fn posts(State(app): S, Extension(me): Me, Query(q): Msg) -> Response {
+    // Il vecchio indirizzo /admin?k=page (preferiti, link salvati) porta al nuovo, con ricerca e scheda.
+    if q.get("k").map(String::as_str) == Some("page") && !q.contains_key("_pagine") {
+        let rest: Vec<String> = q.iter().filter(|(k, _)| k.as_str() != "k").map(|(k, v)| format!("{}={}", urlencoding(k), urlencoding(v))).collect();
+        return Redirect::to(&format!("/admin/pagine{}{}", if rest.is_empty() { "" } else { "?" }, rest.join("&"))).into_response();
+    }
     let st = app.settings();
     let tz = site::tz(&st);
     let kind = if q.get("k").map(String::as_str) == Some("page") && me.editor() { "page" } else { "post" };

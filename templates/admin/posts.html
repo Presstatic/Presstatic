@@ -8,21 +8,21 @@
     <h1>{{ "Pagine" if page else "Articoli" }}</h1>
     <p class="sub">{{ "Le pagine fisse del sito, come Chi siamo, Contatti e Privacy." if page else "Tutto quello che la redazione ha scritto, dal più recente." }}</p>
   </div>
-  <div class="actions"><a class="btn" href="/admin/edit/0{% if page %}?k=page{% endif %}">{{ ic.i("nuovo", 18) }}{{ "Nuova pagina" if page else "Nuovo articolo" }}</a></div>
+  {% set base = "/admin/pagine" if page else "/admin" %}
+  <div class="actions"><a class="btn" href="{{ "/admin/pagine/nuova" if page else "/admin/edit/0" }}">{{ ic.i("nuovo", 18) }}{{ "Nuova pagina" if page else "Nuovo articolo" }}</a></div>
 </header>
 <div class="toolbar">
   <nav class="tabs" aria-label="Filtra per stato">
-    {% set k = "&k=page" if page else "" %}
     {% for key, label in [("", "Tutti"), ("pub", "Pubblicati"), ("pending", "In revisione"), ("sched", "Programmati"), ("draft", "Bozze")] %}
-    <a href="/admin?s={{ key }}{{ k }}"{% if tab == key %} class="on" aria-current="page"{% endif %}>{{ label }}<span>{{ total if not key else (counts[key] or 0) }}</span></a>
+    <a href="{{ base }}{% if key %}?s={{ key }}{% endif %}"{% if tab == key %} class="on" aria-current="page"{% endif %}>{{ label }}<span>{{ total if not key else (counts[key] or 0) }}</span></a>
     {% endfor %}
   </nav>
-  <form class="search" method="get" action="/admin" role="search">{% if tab %}<input type="hidden" name="s" value="{{ tab }}">{% endif %}{% if page %}<input type="hidden" name="k" value="page">{% endif %}<input type="search" name="q" value="{{ q or '' }}" placeholder="Cerca nel titolo e nel testo" aria-label="Cerca nel titolo e nel testo"><button class="btn ghost">Cerca</button></form>
+  <form class="search" method="get" action="{{ base }}" role="search">{% if tab %}<input type="hidden" name="s" value="{{ tab }}">{% endif %}<input type="search" name="q" value="{{ q or '' }}" placeholder="Cerca nel titolo e nel testo" aria-label="Cerca nel titolo e nel testo"><button class="btn ghost">Cerca</button></form>
 </div>
 {% if rows %}
 {% set can_bulk = me.role in ["admin", "editor"] %}
 <form method="post" action="/admin/bulk" id="bulkform">
-<input type="hidden" name="back" value="/admin?{% if page %}k=page&{% endif %}{% if tab %}s={{ tab }}&{% endif %}{% if q %}q={{ q|urlencode }}{% endif %}">
+<input type="hidden" name="back" value="{{ base }}?{% if tab %}s={{ tab }}&{% endif %}{% if q %}q={{ q|urlencode }}{% endif %}">
 <table class="list">
 <thead><tr>{% if can_bulk %}<th class="ck"><input type="checkbox" id="ckall" aria-label="Scegli tutti"></th>{% endif %}<th>Titolo</th><th>Categoria</th><th>Stato</th><th>Data</th></tr></thead>
 <tbody>
@@ -82,7 +82,7 @@
 <div class="panel empty">
   <span class="hic">{{ ic.i("pagine" if page else "articoli", 26) }}</span>
   <p>{% if q %}Nessun articolo contiene «{{ q }}» nel titolo o nel testo.{% elif tab %}In questa sezione non c'è niente.{% elif me.role == "author" %}Non hai ancora scritto articoli. Quando lo invii in revisione, un redattore lo controlla e lo pubblica.{% else %}Non c'è ancora niente. Inizia dal primo: sarà online appena premi Pubblica.{% endif %}</p>
-  <a class="btn" href="/admin/edit/0{% if page %}?k=page{% endif %}">{{ ic.i("nuovo", 18) }}{{ "Crea una pagina" if page else "Scrivi un articolo" }}</a>
+  <a class="btn" href="{{ "/admin/pagine/nuova" if page else "/admin/edit/0" }}">{{ ic.i("nuovo", 18) }}{{ "Crea una pagina" if page else "Scrivi un articolo" }}</a>
 </div>
 {% endif %}
 {% endblock %}
